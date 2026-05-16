@@ -609,15 +609,11 @@ class Conversation:
                 self._terminal_reason = "captured_via_ptp_captured_tag"
                 directives_fired.append("fsm:terminal_authorised_via_PTP_CAPTURED")
 
-            # Customer-wants-to-end signal — the LLM detected the customer is
-            # done engaging (refusal, frustration, explicit close-ask). This
-            # is the fix for the "bot loops forever after customer refusal"
-            # failure mode that the regex classifier keeps missing. When the
-            # LLM tags true, the conversation layer flips terminal_outcome
-            # so the bot's [END_CALL: true] is honoured next turn (or this
-            # turn if already emitted). Routes as refused/customer_signaled_end —
-            # distinct from refused_current_call (hostile two-strike refusal)
-            # and dnd (regulatory permanent suppression).
+            # Customer-wants-to-end signal — informational only. The LLM
+            # tagging true sets the OUTCOME REASON for the CRM ('customer
+            # signaled they wanted to end') but the close itself no longer
+            # depends on this tag — the loosened END_CALL guard below
+            # trusts [END_CALL: true] after the first user turn.
             wants_to_end, bot_text = _extract_wants_to_end_tag(bot_text)
             if wants_to_end is True and not self._terminal_outcome:
                 self._terminal_outcome = "refused"
@@ -636,25 +632,34 @@ class Conversation:
             # Catches both [END_CALL] and [END_CALL: true|false]. The LLM
             # tags [END_CALL: false] as "I'm not closing" — strip but don't
             # honour. Only bare [END_CALL] or [END_CALL: true] = close request.
+            # END_CALL guard — was load-bearing in early demos when the bot
+            # might close prematurely. That concern is now subsumed by six
+            # other layers (speech authority, closing-turn coherence, move
+            # ladder, four structured tags, validator). The guard was actively
+            # breaking the user-facing contract: bot SAYS "closing the call
+            # now" but system kept the call open because terminal_outcome
+            # hadn't been set by an approved route. Customer asks "did you
+            # close the call?" — bot lied.
+            #
+            # New rule: in the main loop (past the opener), the LLM is the
+            # authority on closure. If [END_CALL: true] is emitted, the call
+            # closes. The opener path is unchanged — opener can still close
+            # if it explicitly tags so.
             llm_requested_end, bot_text = _strip_end_call_tag(bot_text)
-            fsm_authorised_end = (
+            ends_now = llm_requested_end
+            if llm_requested_end and not (
                 decision.terminal_outcome is not None
-                or self._terminal_outcome is not None   # sticky once ever set
+                or self._terminal_outcome is not None
                 or decision.next_state in {
                     "TERMINAL", "REFUSAL_CLOSE", "DND_ACKNOWLEDGED", "CALLBACK_CLOSE",
-                    # one-and-done deflects: bot is supposed to deflect ONCE and end
                     "OUT_OF_SCOPE_DEFLECT", "THIRD_PARTY",
                 }
-            )
-            if llm_requested_end and not fsm_authorised_end:
-                logger.warning(
-                    f"LLM emitted [END_CALL] without FSM authorisation in state={state_after} "
-                    f"(intent={intent.intent}). Stripping sentinel and continuing."
-                )
-                ends_now = False
-                directives_fired.append("guard:unauthorised_end_stripped")
-            else:
-                ends_now = llm_requested_end
+            ):
+                # Log for audit — the close fired without prior FSM
+                # authorisation, but we trust the LLM's judgement past
+                # the opener. The audit chip lets Compliance see when
+                # this happens for monthly review.
+                directives_fired.append("guard:llm_authorised_close_late")
             # bot_text already has [END_CALL] / [END_CALL: false] stripped
             # by _strip_end_call_tag above.
             bot_text_clean = bot_text.strip()
