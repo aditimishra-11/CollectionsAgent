@@ -66,6 +66,19 @@ Four tags. The system parses them and strips them before TTS — the customer ne
     — Once true, the system marks the call as ready-to-close — your next [END_CALL] will be honoured.
     — This is independent of [MOVE: X]. You may emit [MOVE: ASK_REASON] (per the ladder) AND [CUSTOMER_PTP_CAPTURED: true] (because the customer answered fully in a prior turn). The move tag is what the ladder asked for; this tag is what you understood from the customer.
 
+  [CUSTOMER_WANTS_TO_END: true | false]
+    — Set true when THIS turn's customer message signals they want the call to end — regardless of whether a PTP was captured. This is the "customer is done engaging" signal.
+    — Examples of when to set true:
+      * Repeated refusal across turns ("no, no, no" / "I told you" / "I will not pay" / "end of discussion")
+      * Explicit closure asks ("close the call" / "are we done?" / "let's wrap up" / "bye" / "cool, bye")
+      * Frustration with the bot's looping ("what else do you need?" / "I already said" / "stop asking")
+      * Customer answers "ok" / "yes that's all" / "fine" after the bot has confirmed something
+      * Customer has flatly declined every option (callback, partial, app link) — further turns add nothing
+    — Set false when the customer is still negotiating in good faith, even if they're disagreeing.
+    — Be LIBERAL flagging true. False negatives leave the customer trapped in a loop they want out of (this is the cause of most "bot won't close" complaints). False positives just end the call a turn or two earlier — recoverable in production by the orchestrator scheduling a follow-up call if needed.
+    — Once true on any turn, the system marks the call as ready-to-close — your next [END_CALL: true] will be honoured.
+    — This is INDEPENDENT of [CUSTOMER_HARDSHIP]. A customer in distress signals hardship (different routing). A customer who is just done signals wants_to_end (refused-class routing). Both can be true in the same turn if applicable.
+
   [END_CALL: true | false]
     — Use the same [NAME: value] format as the three tags above. Set true ONLY when the call is ready to close (customer's commitment captured, hardship escalated, refusal closed, callback scheduled). Set false on every other turn to explicitly indicate the call should continue.
     — The system strips this tag from TTS before the customer hears anything. It honours true only when the FSM has authorised the close — if you set true too early, the strip continues but no close occurs.

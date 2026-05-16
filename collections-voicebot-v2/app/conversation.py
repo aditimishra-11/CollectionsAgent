@@ -164,6 +164,13 @@ _HARDSHIP_TAG_RE = _re_layer1.compile(r"\[CUSTOMER_HARDSHIP:\s*(true|false)\s*\]
 # what the bot SAYS next; this tag describes what the LLM UNDERSTOOD
 # from the customer.
 _PTP_CAPTURED_TAG_RE = _re_layer1.compile(r"\[CUSTOMER_PTP_CAPTURED:\s*(true|false)\s*\]", _re_layer1.IGNORECASE)
+# Customer-wants-to-end signal — the LLM's structured judgement that the
+# customer is done with this call regardless of whether the bot captured
+# anything. Closes the "bot looping after refusal" failure mode that
+# regex-based intent classification keeps missing (customer says "I
+# told you" / "no no no" / "end of discussion" — no regex catches it,
+# but the LLM reads it correctly).
+_WANTS_TO_END_TAG_RE = _re_layer1.compile(r"\[CUSTOMER_WANTS_TO_END:\s*(true|false)\s*\]", _re_layer1.IGNORECASE)
 
 
 def _extract_move_tag(text: str) -> tuple[str | None, str]:
@@ -209,6 +216,25 @@ def _extract_ptp_captured_tag(text: str) -> tuple[bool | None, str]:
         return (None, text)
     signaled = m.group(1).strip().lower() == "true"
     cleaned = _PTP_CAPTURED_TAG_RE.sub("", text).strip()
+    return (signaled, cleaned)
+
+
+def _extract_wants_to_end_tag(text: str) -> tuple[bool | None, str]:
+    """Pull the [CUSTOMER_WANTS_TO_END: true|false] sidecar out of bot text.
+    Returns (signal_or_None, cleaned_text). Missing tag is treated as no
+    signal (None). When true, the conversation layer sets terminal_outcome,
+    which authorises the LLM's next [END_CALL: true] to be honoured. This
+    is the structured signal that catches "customer is done" cases the
+    regex classifier misses ("I will not pay" / "end of discussion" /
+    "what else do you need" / "close the call").
+    """
+    if not text:
+        return (None, text)
+    m = _WANTS_TO_END_TAG_RE.search(text)
+    if not m:
+        return (None, text)
+    signaled = m.group(1).strip().lower() == "true"
+    cleaned = _WANTS_TO_END_TAG_RE.sub("", text).strip()
     return (signaled, cleaned)
 
 
@@ -358,6 +384,7 @@ class Conversation:
         opener_after_move, opener_clean = _extract_move_tag(opener_raw)
         _opener_hardship, opener_clean = _extract_hardship_tag(opener_clean)
         _opener_ptp_captured, opener_clean = _extract_ptp_captured_tag(opener_clean)
+        _opener_wants_to_end, opener_clean = _extract_wants_to_end_tag(opener_clean)
         # Strip [END_CALL] / [END_CALL: false] / [END_CALL: true] from the
         # opener too — without this, the LLM's "I'm not ending the call"
         # sidecar (which it sometimes emits in the bracketed-tag format
@@ -581,6 +608,21 @@ class Conversation:
                 self._terminal_outcome = "promise_to_pay"
                 self._terminal_reason = "captured_via_ptp_captured_tag"
                 directives_fired.append("fsm:terminal_authorised_via_PTP_CAPTURED")
+
+            # Customer-wants-to-end signal — the LLM detected the customer is
+            # done engaging (refusal, frustration, explicit close-ask). This
+            # is the fix for the "bot loops forever after customer refusal"
+            # failure mode that the regex classifier keeps missing. When the
+            # LLM tags true, the conversation layer flips terminal_outcome
+            # so the bot's [END_CALL: true] is honoured next turn (or this
+            # turn if already emitted). Routes as refused/customer_signaled_end —
+            # distinct from refused_current_call (hostile two-strike refusal)
+            # and dnd (regulatory permanent suppression).
+            wants_to_end, bot_text = _extract_wants_to_end_tag(bot_text)
+            if wants_to_end is True and not self._terminal_outcome:
+                self._terminal_outcome = "refused"
+                self._terminal_reason = "customer_signaled_end"
+                directives_fired.append("fsm:terminal_authorised_via_WANTS_TO_END")
 
             # [END_CALL] guard — the FSM owns when the call ends. The LLM may
             # REQUEST a close via [END_CALL], but it's only honoured when the
