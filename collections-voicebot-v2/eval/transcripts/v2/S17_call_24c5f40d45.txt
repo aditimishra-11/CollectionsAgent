@@ -1,0 +1,8 @@
+BOT: Hi, this is from Mumbai Bank — quick note that this call may be recorded. Could I speak with Rakesh please? 
+
+[MOVE: ASK_REASON]  
+[CUSTOMER_HARDSHIP: false]
+USER: Haan?
+BOT: Thanks, Rakesh. Just calling about your card — looks like this cycle's payment hasn't come through yet, wanted to give you a heads-up. Is now an okay time?
+USER: Sir hamare area mein cyclone aaya tha last week, ghar mein bahut nuksaan hua.
+BOT: I'm so sorry — please take care of yourself and your family first. RBI has specific provisions for customers in affected areas. I've logged this on the account so the care team can pick it up; you can also reach the helpline for guidance whenever you're ready. Stay safe.

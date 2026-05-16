@@ -1,0 +1,5 @@
+BOT: Hi, this is from Mumbai Bank — this call may be recorded for quality. Could I speak with Ankit Verma please?
+USER: 
+BOT: Thanks for confirming, Ankit. I see this cycle's payment is still pending. Is everything alright on your end?
+USER: 
+BOT: Ankit, I didn't catch your reason for the missed payment. Could you please share if there’s any specific issue? Let's see how we can sort it out together.

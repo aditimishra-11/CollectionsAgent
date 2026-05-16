@@ -1,0 +1,7 @@
+BOT: Hi, this is from Mumbai Bank — this call may be recorded for quality. Could I speak with Rajesh please?  
+[MOVE: ASK_REASON]  
+[CUSTOMER_HARDSHIP: false]
+USER: Hello.
+BOT: Thanks for confirming, Rajesh. I see this cycle's payment is still pending. Is everything alright on your end?
+USER: Dekho main DND pe registered hoon. Mujhe call mat karo.
+BOT: Got it. I've noted that down on your file. For anything urgent on your card, the helpline is the fastest route. Thank you for the call.

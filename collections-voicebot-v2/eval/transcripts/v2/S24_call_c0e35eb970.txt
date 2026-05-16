@@ -1,0 +1,5 @@
+BOT: Hi, this is from Mumbai Bank — this call may be recorded for quality. Could I speak with Ankit please?
+USER: 
+BOT: Thanks, Ankit. Calling about your card — I see this cycle's payment is still pending. Wanted to check in — everything alright? Let's see how we can sort it out together.
+USER: 
+BOT: Hello? Are you there, Ankit? I’m here to help with your card payment if you’d like to talk.

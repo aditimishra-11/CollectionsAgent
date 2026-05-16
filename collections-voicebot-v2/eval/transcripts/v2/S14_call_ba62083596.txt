@@ -1,0 +1,8 @@
+BOT: Hi, this is from Mumbai Bank — this call may be recorded for quality. Could I speak with Mehul Joshi please? 
+
+[MOVE: ASK_REASON]  
+[CUSTOMER_HARDSHIP: false]
+USER: Hello? Yeh kiska number hai?
+BOT: This is Mumbai Bank calling about a personal account matter. May I please speak with Mehul Joshi?
+USER: Nahi nahi, main toh koi Mehta nahi hoon. Galat number hai.
+BOT: Understood, this is a wrong number then. I'll end the call now. Have a good day.

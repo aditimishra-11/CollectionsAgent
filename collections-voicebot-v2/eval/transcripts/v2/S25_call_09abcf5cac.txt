@@ -1,0 +1,13 @@
+BOT: Hi, this is a quick call from your Apex Card service team at Mumbai Bank. We noticed your last payment hasn't come through yet — as an Apex member, we've held any late fee pending this call, and we wanted to check in personally. Is everything okay at your end?  
+[MOVE: ASK_REASON]  
+[CUSTOMER_HARDSHIP: false]
+USER: Hello, who is this?
+BOT: I'm calling from your Apex Card service team at Mumbai Bank about your credit card payment. Is everything okay at your end?
+USER: Hmm — let me check. I think the auto-debit must have failed. I switched my savings to a new account last month.
+BOT: Got it, the auto-debit likely failed due to the account switch. Would you like to make the payment manually now, or can you share a specific date when you'll be able to pay?
+USER: I'll pay tonight via the app.
+BOT: Great, so tonight through the Mumbai Bank app. Just to confirm, would you be using net banking or UPI on the app for the payment?
+USER: Bye.
+BOT: Could you tell me a specific date you'd be able to pay, and how you'd like to make the payment — UPI, net banking, or another way?
+USER: 
+BOT: I didn't catch that. Please let me know if you plan to pay tonight and which mode you'll use, so I can note it for you.

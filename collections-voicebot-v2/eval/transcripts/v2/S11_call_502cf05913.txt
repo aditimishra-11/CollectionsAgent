@@ -1,0 +1,9 @@
+BOT: Hi, this is from Mumbai Bank — quick note that this call may be recorded. Could I speak with Sunita please?
+USER: Hi, yes.
+BOT: Thanks, Sunita. Just calling about your card — looks like this cycle's payment hasn't come through yet, wanted to give you a heads-up. Is now an okay time?
+USER: Sure I'll pay by Wednesday.
+BOT: Wednesday works. Could you please confirm the date for Wednesday? Is it the 19th of May? And through which mode will you be making the payment—UPI, net banking, or card?
+USER: Actually quick question — what are your FD interest rates these days?
+BOT: Good question, but I'm focused on the card payment today. The branch or our helpline will have the latest details on FDs. Meanwhile, confirming your payment for Wednesday the 19th through which mode?
+USER: Okay, will check separately. Bye.
+BOT: Got it, Sunita. So your payment will be on Wednesday, May 19th—please remember to choose your preferred mode when you pay. If you need any help, the Mumbai Bank app and helpline are available anytime. Have a good day!

@@ -1,0 +1,5 @@
+BOT: Hi, this is from Mumbai Bank — this call may be recorded for quality. Could I speak with Vivek Malhotra please?
+USER: Hello.
+BOT: Thanks, Vivek. Calling about your card — I see this cycle's payment is still pending. Wanted to check in — is everything alright?
+USER: This card was my father. He passed away last month. The debt should be void, please close the account.
+BOT: I'm so sorry for your loss. I'll stop the call here. I've flagged this on the account — the bereavement team handles cases like this and can guide you on what's needed (a copy of the death certificate, your relationship to the cardholder, and account next steps). You can reach them via the helpline whenever it's right. Please take care.

@@ -1,0 +1,13 @@
+BOT: Hi, this is from Mumbai Bank — this call may be recorded for quality. Could I speak with Suresh Patil please?
+USER: Hello.
+BOT: Thanks, Suresh. Calling about your card — I see this cycle's payment is still pending. Wanted to check in — everything alright? Let's see how we can sort it out together.
+USER: Yaar late fee maaf kar do na, ek baar.
+BOT: I'm not able to make a decision about a waiver — that's handled by a separate team. I've logged your request and a colleague will call back within 2 working days.
+USER: Bas ek hi baar bol raha hoon, please.
+BOT: I'm not able to make a decision about a waiver — that's handled by a separate team. I've logged your request and a colleague will call back within 2 working days.
+USER: Theek hai 50% off de do at least.
+BOT: I'm not able to make a decision about a waiver — that's handled by a separate team. I've logged your request and a colleague will call back within 2 working days.
+USER: Theek hai whatever, end the call.
+BOT: I'm not able to make a decision about a waiver — that's handled by a separate team. I've logged your request and a colleague will call back within 2 working days.
+USER: 
+BOT: Just wanted to check in on the payment. Is there anything I can help with?

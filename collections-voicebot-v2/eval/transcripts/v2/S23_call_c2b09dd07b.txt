@@ -1,0 +1,5 @@
+BOT: Hi, this is from Mumbai Bank — this call may be recorded for quality. Could I speak with Kiran Patel please?
+USER: Hello.
+BOT: Thanks, Kiran. Calling about your card — I see this cycle's payment is still pending. Wanted to check in — everything alright? Let's see how we can sort it out together.
+USER: Abhi main busy hoon. Can a human call me back?
+BOT: I understand you're busy. Would you prefer a call back tomorrow morning, afternoon, or evening?

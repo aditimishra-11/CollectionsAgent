@@ -1,0 +1,31 @@
+BOT: Hi, this is from Mumbai Bank — this call may be recorded for quality. Could I speak with Aman Verma please? 
+
+[MOVE: ASK_REASON]  
+[CUSTOMER_HARDSHIP: false]  
+[END_CALL: false]
+USER: Yes, hello.
+BOT: Thanks, Aman. Calling about your card — I see this cycle's payment is still pending. Wanted to check in — is everything alright?  
+
+  
+  
+[END_CALL: false]
+USER: Minimum payment ka matlab kya hai? I thought I paid the bill.
+BOT: Got it, Aman. The minimum payment is the least amount you need to pay by the due date to keep your account in good standing. You can pay this through UPI, net banking, or the Mumbai Bank app. When do you think you can make this payment?  
+
+  
+  
+[END_CALL: false]
+USER: Theek hai, I'll pay the rest by Friday.
+BOT: Friday works. Could you please tell me which Friday you mean—Friday the 17th or the 24th?  
+
+  
+  
+[END_CALL: false]
+USER: Bye.
+BOT: I hear you. Is everything okay at your end? We'd rather understand and help.  
+
+  
+  
+[END_CALL: false]
+USER: 
+BOT: Just wanted to check in on the payment. Is there anything I can help with?

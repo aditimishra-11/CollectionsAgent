@@ -1,0 +1,10 @@
+BOT: Hi, this is from Mumbai Bank — this call may be recorded for quality. Could I speak with Suresh Patel please? 
+
+[MOVE: ASK_REASON]  
+[CUSTOMER_HARDSHIP: false]
+USER: Haan ji, kya baat hai?
+BOT: Thanks for confirming, Suresh. I see this cycle's payment is still pending. Is everything alright on your end?
+USER: Maine paisa nahi diya kya? Mujhe yaad nahi tha.
+BOT: Got it, you forgot to make the payment this time. When do you think you'll be able to pay the outstanding amount? Please specify a date.
+USER: Theek hai, parson tak de dunga UPI se.
+BOT: Understood, so you'll pay through UPI on Thursday, the 18th of May. You'll see it reflect within 2 working days. Thanks for sorting this out.
