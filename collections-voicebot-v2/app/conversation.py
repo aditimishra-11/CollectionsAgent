@@ -372,15 +372,24 @@ class Conversation:
                 )
                 self._fsm.record_move(move)
 
-            # [END_CALL] guard — the FSM owns when the call ends. The LLM is
-            # allowed to REQUEST a close via [END_CALL], but it's only honoured
-            # when the FSM authorised it for this turn (terminal_outcome set or
-            # state already terminal-flavoured). Otherwise we strip the sentinel
-            # and continue — the LLM's wording itself was already validated.
+            # [END_CALL] guard — the FSM owns when the call ends. The LLM may
+            # REQUEST a close via [END_CALL], but it's only honoured when the
+            # FSM has authorised an end at any point in this call.
+            # STICKY rule: once a terminal_outcome was ever set on this call
+            # (e.g. on entering PTP_PROBE / WAIVER_NOTED / ALREADY_PAID), the
+            # LLM may close on this OR any later turn — those states are
+            # "do one thing, then end on next confirmation" by design.
+            # Plus a small list of one-and-done deflect states that are
+            # also allowed to end after their single move.
             llm_requested_end = END_SENTINEL in bot_text
             fsm_authorised_end = (
                 decision.terminal_outcome is not None
-                or decision.next_state in {"TERMINAL", "REFUSAL_CLOSE", "DND_ACKNOWLEDGED", "CALLBACK_CLOSE"}
+                or self._terminal_outcome is not None   # sticky once ever set
+                or decision.next_state in {
+                    "TERMINAL", "REFUSAL_CLOSE", "DND_ACKNOWLEDGED", "CALLBACK_CLOSE",
+                    # one-and-done deflects: bot is supposed to deflect ONCE and end
+                    "OUT_OF_SCOPE_DEFLECT", "THIRD_PARTY",
+                }
             )
             if llm_requested_end and not fsm_authorised_end:
                 logger.warning(

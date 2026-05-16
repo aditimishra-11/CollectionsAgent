@@ -515,6 +515,12 @@ def main(argv: list[str] | None = None) -> int:
         glyph = "✓" if val >= target else "✗"
         return f"{format(val, fmt)}  (target {format(target, fmt)})  {glyph}"
 
+    # Force UTF-8 on stdout for the summary so Windows cp1252 doesn't
+    # crash on the box-drawing characters used below.
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[attr-defined]
+    except Exception:
+        pass
     print("\n" + "═" * 70)
     print(f"v2 EVAL — {len(results)} scenarios, can the bot ship?")
     print("═" * 70)
