@@ -147,12 +147,24 @@ def _extract_move_tag(text: str) -> tuple[str | None, str]:
 import re as _re
 
 _FAR_OUT_PATTERNS: list[_re.Pattern] = [
+    # Explicit multi-month / next-to-next
     _re.compile(r"\bnext\s+to\s+next\s+(month|salary|paycheck)\b", _re.I),
-    _re.compile(r"\b(two|three|four|2|3|4)\s+months?\b", _re.I),
+    _re.compile(r"\b(two|three|four|five|six|2|3|4|5|6)\s+months?\b", _re.I),
     _re.compile(r"\bafter\s+(two|three|2|3)\s+months?\b", _re.I),
-    _re.compile(r"\b(do|teen)\s+(mahine|maheene)\b", _re.I),
-    _re.compile(r"\bagle\s+(mahine\s+ke\s+baad|salary\s+ke\s+baad)\b", _re.I),
+    _re.compile(r"\b(do|teen|char)\s+(mahine|maheene)\b", _re.I),
+    _re.compile(r"\bagle\s+(mahine|maheene)\s+(ke\s+baad|me|salary|ko)\b", _re.I),
     _re.compile(r"\bend\s+of\s+(next|the\s+next)\s+month\b", _re.I),
+    # Plain "next month" — common phrasing meaning ≥15 days out. Always
+    # exceeds the strictest policies (frequent_late_strict = 7d, late
+    # non-frequent = 10d). For the default 21-day policy it's borderline,
+    # but the bot pushing back politely is always recoverable.
+    _re.compile(r"\bnext\s+month\b", _re.I),
+    # Salary-deferred PTP — "my salary will come next month, I'll pay then"
+    # / "wait till my salary" / "when I get money".
+    _re.compile(r"\bsalary\s+(will\s+come|comes|aayegi|aaye|hogi|hoga)\b", _re.I),
+    _re.compile(r"\bwhen(ever)?\s+(my\s+)?(salary|money|paycheck|cash)\b", _re.I),
+    _re.compile(r"\bwhen(ever)?\s+i\s+(get|have|earn|receive|find)\b", _re.I),
+    _re.compile(r"\bafter\s+(my\s+)?(salary|paycheck)\b", _re.I),
 ]
 
 
