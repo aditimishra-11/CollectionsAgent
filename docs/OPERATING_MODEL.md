@@ -91,15 +91,17 @@ Every per-turn audit record now carries a `directives_fired[]` array — one ent
 |---|---|---|
 | `policy:` | A SegmentPolicy threshold fired | `policy:ptp_horizon_breach` (bot pushed back on a too-far PTP) |
 | `ladder:` | The move ladder forced a specific move | `ladder:next_move=OFFER_CALLBACK`, `ladder:exhausted` |
-| `fsm:` | An FSM strike or note fired | `fsm:abuse_first_strike`, `fsm:refuse_current_call_first_strike` |
+| `fsm:` | An FSM strike, lock, or terminal-authorisation event | `fsm:abuse_first_strike`, `fsm:refuse_current_call_first_strike`, `fsm:hardship_locked` (LLM tagged distress → PTP moves disabled), `fsm:terminal_authorised_via_PTP_CAPTURED` / `_via_WANTS_TO_END` / `_via_ladder_exhausted` (close allowed via different paths) |
 | `validator:` | A compliance rule blocked the LLM | `validator:commitment_overreach`, `validator:discloses_balance` |
-| `guard:` | A meta-guard caught the LLM going off-script | `guard:unauthorised_end_stripped` (LLM tried to end call without FSM authorisation) |
+| `guard:` | A meta-guard rule fired | `guard:llm_authorised_close_late` (LLM emitted `[END_CALL: true]` past the opener without a prior FSM-set terminal_outcome — accepted by design, logged for monthly review) |
 
 Compliance can grep on these directly during a monthly audit. Three sample queries:
 
 - "Show me every call where the bot was about to promise no future contact and the validator caught it." → `grep "validator:commitment_overreach" *.jsonl`
 - "Show me every call where the bot ran out of moves in PTP_PROBE and gracefully closed." → `grep "ladder:exhausted" *.jsonl`
-- "Show me every call where the LLM tried to self-terminate against FSM authority." → `grep "guard:unauthorised_end_stripped" *.jsonl`
+- "Show me every call where the LLM detected hardship and the ladder locked PTP moves." → `grep "fsm:hardship_locked" *.jsonl`
+- "Show me every call where the customer signalled end-of-call implicitly (LLM tag, not regex)." → `grep "fsm:terminal_authorised_via_WANTS_TO_END" *.jsonl`
+- "Show me every call where the LLM closed past the opener without an FSM-set terminal_outcome." → `grep "guard:llm_authorised_close_late" *.jsonl`
 
 Each result row also carries `policy_rationale` on the outcome (e.g. `frequent_late_strict`) — so a Compliance auditor reviewing a refusal can see at a glance whether the segment policy correctly upgraded the case to human takeover.
 

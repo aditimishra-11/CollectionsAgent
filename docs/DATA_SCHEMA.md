@@ -90,7 +90,7 @@ Written to JSONL by `app/audit.py`. Used by Ops drill-down and Compliance audit.
 | `fsm_state_before` | enum | |
 | `fsm_state_after` | enum | |
 | `move_played` | enum (1 of 9 ladder moves) | Which ladder move the FSM forced the bot to play this turn (e.g. `ASK_DATE`, `OFFER_PARTIAL`, `OFFER_CALLBACK`). Null when in a non-ladder-managed state. See `app/fsm.py::LADDERS`. |
-| `directives_fired[]` | list of "layer:detail" strings | Every deterministic guardrail that ran this turn. Prefix tells you which layer fired: `policy:` (segment-policy thresholds), `ladder:` (move ladder), `fsm:` (FSM strikes / notes), `validator:` (rule violations), `guard:` (END_CALL stripped, etc.). Compliance can grep on this. |
+| `directives_fired[]` | list of "layer:detail" strings | Every deterministic guardrail that ran this turn. Prefix tells you which layer fired (table below). Compliance can grep on this. |
 | `fast_path` | bool | True if this turn bypassed the LLM |
 | `validator_passed` | bool | |
 | `validator_violations[]` | list | If any prohibited pattern was caught |
@@ -99,6 +99,30 @@ Written to JSONL by `app/audit.py`. Used by Ops drill-down and Compliance audit.
 | `llm_latency_ms` | int | |
 | `tts_latency_ms` | int | |
 | `tokens_in`, `tokens_out` | int | For cost tracking |
+
+#### `directives_fired[]` prefix table
+
+| Prefix | Meaning | Examples |
+|---|---|---|
+| `policy:` | A `SegmentPolicy` threshold fired | `policy:ptp_horizon_breach` (customer proposed a date beyond `policy.max_ptp_days`) |
+| `ladder:` | Move-ladder logic | `ladder:next_move=OFFER_CALLBACK`, `ladder:exhausted` |
+| `fsm:` | FSM strike, lock, or terminal-authorisation event | `fsm:abuse_first_strike`, `fsm:refuse_current_call_first_strike`, `fsm:hardship_locked`, `fsm:terminal_authorised_via_PTP_CAPTURED`, `fsm:terminal_authorised_via_WANTS_TO_END`, `fsm:terminal_authorised_via_ladder_exhausted` |
+| `validator:` | A validator rule blocked the LLM | `validator:commitment_overreach`, `validator:discloses_balance` |
+| `guard:` | A meta-guard rule fired | `guard:llm_authorised_close_late` (LLM emitted `[END_CALL: true]` past the opener, without a prior FSM authorisation route — recorded for monthly compliance review) |
+
+### LLM-emitted structured tags (per turn — stripped before TTS)
+
+The LLM is required to emit five structured tags at the end of every reply. The conversation layer parses them, records them in the audit JSONL, and strips them from the text before TTS. Each tag has one job.
+
+| Tag | LLM declares | Code consequence |
+|---|---|---|
+| `[MOVE: <enum>]` | Which "move" the bot played this turn (1 of 9: `ASK_DATE`, `ASK_MODE`, `ASK_REASON`, `CONFIRM_PTP`, `OFFER_APP_LINK`, `OFFER_PARTIAL`, `OFFER_CALLBACK`, `EMPATHY_PROBE`, `CHALLENGE_HORIZON`) | Records in `moves_played[state]`; ladder cannot replay |
+| `[CUSTOMER_HARDSHIP: true \| false]` | Whether the customer signalled distress this turn | `true` once → sticky `hardship_locked`; ladder skips ASK_DATE / ASK_MODE / CONFIRM_PTP / OFFER_PARTIAL / OFFER_APP_LINK / CHALLENGE_HORIZON moves |
+| `[CUSTOMER_PTP_CAPTURED: true \| false]` | Whether the customer has given BOTH a specific date AND a specific mode (this turn or earlier) | `true` → sticky `terminal_outcome = "promise_to_pay"`, reason = `captured_via_ptp_captured_tag` |
+| `[CUSTOMER_WANTS_TO_END: true \| false]` | Whether the customer signalled they want the call to end (refusal, frustration, explicit close-ask) | `true` → `terminal_outcome = "refused"`, reason = `customer_signaled_end` |
+| `[END_CALL: true \| false]` | Whether the bot's reply IS a closing turn | `true` → call closes (past the opener; the guard was relaxed once other layers stabilised) |
+
+**Graceful degradation:** if the LLM forgets a tag on any turn, the parser returns `None` and behaviour falls back to existing paths (no regression). Tags are liberal-on-by-design — false negatives leave customers in loops they want out of; false positives end the call a turn earlier (recoverable by the multi-call orchestrator).
 
 ### End-of-call (terminal outcome → CRM webhook)
 
@@ -144,11 +168,21 @@ human_callback_required:
 
 refused:
   reason: enum — IMPORTANT, drives orchestrator behaviour:
-    - "dnd"                  → TRAI DND registered; permanent suppression of MARKETING.
-                               Collections contact may continue per RBI Fair Practices Code
-                               (DND suppresses marketing, not legitimate dues).
-    - "refused_current_call" → Customer refused THIS call (frustration, not regulatory DND).
-                               Retry allowed after cooling-off per policy.callback_sla_hours.
+    - "dnd"                          → TRAI DND registered; permanent suppression of
+                                       MARKETING. Collections contact may continue per RBI
+                                       Fair Practices Code (DND suppresses marketing, not
+                                       legitimate dues).
+    - "refused_current_call"         → Customer refused THIS call (hostile two-strike via the
+                                       regex classifier). Retry allowed after cooling-off
+                                       per policy.callback_sla_hours.
+    - "customer_signaled_end"        → LLM-detected close intent via [CUSTOMER_WANTS_TO_END:
+                                       true] — catches the implicit-refusal cases the regex
+                                       classifier misses ("end of discussion" / "what else
+                                       do you need"). Same retry policy as refused_current_call.
+    - "ladder_exhausted_no_capture"  → FSM played every move in the ladder without converging
+                                       — bot has tried everything and the customer hasn't
+                                       committed. Cooling-off applies; bot retry possible
+                                       per policy.
   reason_stated: string (optional, customer's words)
 
 wrong_number, no_answer: {} (no detail)

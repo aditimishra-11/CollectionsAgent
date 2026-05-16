@@ -2,6 +2,8 @@
 
 The eval is a **behavioural proxy** for the production success metrics that actually matter in BFSI collections. Real recovery rates, cure rates, roll rates, PTP Kept Rate, and 90-day post-call churn require live deployment and weeks of payment data. We can't test those. What we CAN test is whether the bot **behaves** in ways that predict good outcomes on those metrics.
 
+> **For the final results summary:** see `../../WRITEUP.md` §2 for the headline table across all 5 eval cycles (final state: P0 100%, PTP date+mode 100%, voice p95 1.9s, full pass 55%) and §11 for an honest reflection on the iteration cycle.
+
 ## How to read this
 
 Every metric below answers one of four questions a panel / banker would actually ask, plus the production outcome it predicts.
