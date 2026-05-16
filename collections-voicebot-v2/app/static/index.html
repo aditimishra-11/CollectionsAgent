@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mumbai Bank Collections Voicebot — Terminal</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Silero VAD running in browser via onnxruntime-web -->
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/ort.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.19/dist/bundle.min.js"></script>
   <style>
     body {
       font-family: 'JetBrains Mono', 'Menlo', 'Consolas', monospace;
@@ -116,13 +119,12 @@
               ENTER
             </button>
           </form>
-          <!-- voice control -->
+          <!-- voice control — continuous Silero VAD, phone-call style -->
           <div id="voiceControls" class="hidden flex items-center gap-3">
-            <button id="micBtn" type="button"
-                    class="mic-btn flex items-center gap-2 bg-green-700 hover:bg-green-600 text-white text-sm font-medium px-5 py-2 rounded-full">
-              <span class="text-lg">●</span>
-              <span id="micLabel">HOLD TO SPEAK</span>
-            </button>
+            <div id="vadIndicator" class="flex items-center gap-2 text-sm">
+              <span id="vadDot" class="inline-block w-2.5 h-2.5 rounded-full bg-gray-600"></span>
+              <span id="vadLabel" class="text-gray-400">initialising…</span>
+            </div>
             <span id="voiceStatus" class="text-xs text-gray-500"></span>
             <audio id="botAudio" hidden></audio>
           </div>
@@ -206,8 +208,8 @@
     const modeTextBtn = document.getElementById('modeTextBtn');
     const modeVoiceBtn = document.getElementById('modeVoiceBtn');
     const voiceControls = document.getElementById('voiceControls');
-    const micBtn = document.getElementById('micBtn');
-    const micLabel = document.getElementById('micLabel');
+    const vadDot = document.getElementById('vadDot');
+    const vadLabel = document.getElementById('vadLabel');
     const voiceStatus = document.getElementById('voiceStatus');
     const botAudio = document.getElementById('botAudio');
 
@@ -486,7 +488,7 @@
           sendForm.classList.add('hidden');
           voiceControls.classList.remove('hidden');
           voiceControls.classList.add('flex');
-          await setupAudio();
+          await setupVAD();
         } else {
           userInput.disabled = false;
           sendBtn.disabled = false;
@@ -525,9 +527,12 @@
           endBtn.classList.add('hidden');
           fsmIndicator.textContent = '— ended —';
           addLine('system', 'call closed.');
+          stopVAD();
+          voiceControls.classList.add('hidden');
           eventSource.close();
         } else if (data.type === 'error') {
           addLine('error', data.message);
+          stopVAD();
           eventSource.close();
         }
       };
@@ -557,94 +562,80 @@
       await fetch(`/api/call/${currentCallId}/end`, { method: 'POST' });
     });
 
-    // -------------------- voice: record → WAV → upload --------------------
-    let audioContext = null;
-    let mediaStream = null;
-    let workletNode = null;
-    let captureBuffer = [];
-    let recording = false;
+    // -------------------- voice: continuous Silero VAD in browser --------------------
+    let micVad = null;
+    let botIsSpeaking = false;
     const TARGET_SR = 16000;
 
-    async function setupAudio() {
-      voiceStatus.textContent = 'requesting mic…';
+    function setVadIndicator(state) {
+      // states: 'init', 'idle', 'listening', 'sending', 'bot_speaking', 'error'
+      const cfg = {
+        init:         { dot: 'bg-gray-600',        label: 'loading silero vad…' },
+        idle:         { dot: 'bg-green-500',       label: 'listening — just speak' },
+        listening:    { dot: 'bg-amber-400 animate-pulse', label: '● voice detected — keep talking' },
+        sending:      { dot: 'bg-blue-500',        label: 'transcribing…' },
+        bot_speaking: { dot: 'bg-purple-500',      label: 'bot speaking — mic paused' },
+        error:        { dot: 'bg-red-500',         label: 'mic error' },
+      }[state] || { dot: 'bg-gray-600', label: state };
+      vadDot.className = 'inline-block w-2.5 h-2.5 rounded-full ' + cfg.dot;
+      vadLabel.textContent = cfg.label;
+    }
+
+    async function setupVAD() {
+      setVadIndicator('init');
+      voiceStatus.textContent = '';
       try {
-        mediaStream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            channelCount: 1,
-            sampleRate: TARGET_SR,
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
+        // First-load downloads Silero ONNX model from CDN (~1MB).
+        micVad = await vad.MicVAD.new({
+          // Reasonable defaults for Hinglish — Silero is robust enough that
+          // these don't need much tuning.
+          positiveSpeechThreshold: 0.5,
+          negativeSpeechThreshold: 0.35,
+          minSpeechFrames: 4,           // ~250ms minimum (filters out clicks/coughs)
+          preSpeechPadFrames: 10,       // include audio just before speech start
+          redemptionFrames: 16,         // wait this many silent frames before ending utterance
+          onSpeechStart: () => {
+            if (botIsSpeaking) return;
+            setVadIndicator('listening');
+          },
+          onVADMisfire: () => {
+            if (botIsSpeaking) return;
+            setVadIndicator('idle');
+          },
+          onSpeechEnd: async (audio) => {
+            if (botIsSpeaking) return;
+            setVadIndicator('sending');
+            const wav = encodeWAV(audio, TARGET_SR);
+            const blob = new Blob([wav], { type: 'audio/wav' });
+            const form = new FormData();
+            form.append('audio', blob, 'utt.wav');
+            try {
+              const res = await fetch(`/api/call/${currentCallId}/audio_in`, { method: 'POST', body: form });
+              if (!res.ok) { addLine('error', 'STT failed: ' + res.status); }
+              else {
+                const data = await res.json();
+                addLine('user', data.transcript || '(no transcript)');
+              }
+            } catch (e) {
+              addLine('error', 'upload: ' + e.message);
+            } finally {
+              if (!botIsSpeaking) setVadIndicator('idle');
+            }
           },
         });
-        audioContext = new AudioContext({ sampleRate: TARGET_SR });
-        voiceStatus.textContent = 'mic ready — hold to speak';
+        micVad.start();
+        setVadIndicator('idle');
       } catch (err) {
-        addLine('error', 'mic permission denied: ' + err.message);
-        voiceStatus.textContent = 'mic denied';
+        addLine('error', 'VAD setup failed: ' + err.message);
+        setVadIndicator('error');
       }
     }
 
-    micBtn.addEventListener('mousedown', startRecording);
-    micBtn.addEventListener('touchstart', startRecording);
-    micBtn.addEventListener('mouseup', stopRecording);
-    micBtn.addEventListener('mouseleave', () => { if (recording) stopRecording(); });
-    micBtn.addEventListener('touchend', stopRecording);
-
-    async function startRecording() {
-      if (recording || !audioContext) return;
-      recording = true;
-      captureBuffer = [];
-      micBtn.classList.add('recording');
-      micLabel.textContent = 'RELEASE TO SEND';
-      voiceStatus.textContent = '● recording';
-
-      const source = audioContext.createMediaStreamSource(mediaStream);
-      const processor = audioContext.createScriptProcessor(4096, 1, 1);
-      processor.onaudioprocess = (e) => {
-        if (!recording) return;
-        const ch = e.inputBuffer.getChannelData(0);
-        captureBuffer.push(new Float32Array(ch));
-      };
-      source.connect(processor);
-      processor.connect(audioContext.destination);
-      workletNode = { source, processor };
-    }
-
-    async function stopRecording() {
-      if (!recording) return;
-      recording = false;
-      micBtn.classList.remove('recording');
-      micLabel.textContent = 'HOLD TO SPEAK';
-      voiceStatus.textContent = 'transcribing…';
-
-      if (workletNode) {
-        try { workletNode.processor.disconnect(); workletNode.source.disconnect(); } catch (e) {}
-      }
-
-      // Concatenate Float32Array chunks
-      const totalLen = captureBuffer.reduce((s, b) => s + b.length, 0);
-      if (totalLen < TARGET_SR * 0.3) {
-        voiceStatus.textContent = 'too short — try again';
-        return;
-      }
-      const merged = new Float32Array(totalLen);
-      let off = 0;
-      for (const b of captureBuffer) { merged.set(b, off); off += b.length; }
-
-      const wav = encodeWAV(merged, TARGET_SR);
-      const blob = new Blob([wav], { type: 'audio/wav' });
-      const form = new FormData();
-      form.append('audio', blob, 'utt.wav');
-
-      try {
-        const res = await fetch(`/api/call/${currentCallId}/audio_in`, { method: 'POST', body: form });
-        if (!res.ok) { voiceStatus.textContent = 'stt error: ' + res.status; return; }
-        const data = await res.json();
-        addLine('user', data.transcript || '(no transcript)');
-        voiceStatus.textContent = 'sent.';
-      } catch (e) {
-        voiceStatus.textContent = 'upload failed';
+    function stopVAD() {
+      if (micVad) {
+        try { micVad.pause(); } catch (e) {}
+        try { micVad.destroy(); } catch (e) {}
+        micVad = null;
       }
     }
 
@@ -676,6 +667,7 @@
     }
 
     // Base64 (int16 PCM mono) → playable AudioBuffer
+    // Pauses VAD during playback so the bot's voice doesn't trigger itself.
     function playBase64Audio(b64, sampleRate) {
       try {
         const bin = atob(b64);
@@ -684,15 +676,28 @@
         const pcm = new Int16Array(bytes.buffer);
         const f32 = new Float32Array(pcm.length);
         for (let i = 0; i < pcm.length; i++) f32[i] = pcm[i] / 32768;
-        const ctx = audioContext || new AudioContext({ sampleRate });
+        const ctx = new AudioContext({ sampleRate });
         const buf = ctx.createBuffer(1, f32.length, sampleRate);
         buf.copyToChannel(f32, 0);
         const src = ctx.createBufferSource();
         src.buffer = buf;
         src.connect(ctx.destination);
+
+        botIsSpeaking = true;
+        if (micVad) { try { micVad.pause(); } catch (e) {} }
+        setVadIndicator('bot_speaking');
+
+        src.onended = () => {
+          botIsSpeaking = false;
+          if (micVad) {
+            try { micVad.start(); } catch (e) {}
+            setVadIndicator('idle');
+          }
+        };
         src.start();
       } catch (e) {
         addLine('error', 'audio playback: ' + e.message);
+        botIsSpeaking = false;
       }
     }
 
