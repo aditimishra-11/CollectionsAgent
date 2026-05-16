@@ -158,45 +158,50 @@ OTHER_CUSTOMER = [
 # regardless of TRAI DND (DND suppresses marketing, not legitimate dues).
 # The bot can log a preference; it cannot suspend the collections queue.
 COMMITMENT_OVERREACH = [
-    # No-future-contact — any verb the bot might use
-    re.compile(r"\b(we|i|the\s+bank|a\s+colleague)\s+(will\s+not|won'?t)\s+"
-               r"(call|contact|disturb|bother|reach\s+out\s+to|reach\s+you|dial|"
-               r"ring|message|text|trouble)\s+you\b", re.I),
+    # SCOPE: this validator catches STRONG commitments the bot has no
+    # authority to make — phrases that promise specific actions by other
+    # people/teams at specific clocks, or promise outcomes (waivers,
+    # refunds, suppressions) the bot doesn't control. SOFT phrasings
+    # like "a colleague may reach out" / "let me arrange a callback" /
+    # "we can follow up" are NOT commitments and are allowed through.
+    # The discriminator is the strength of the promise:
+    #   - "WILL personally call" → STRONG (block)
+    #   - "may reach out" / "can follow up" / "let me arrange" → SOFT (allow)
+    #   - "within 24 hours" with a routing-promise → STRONG (block)
+    #   - "tomorrow" alone with a soft verb → SOFT (allow)
+
+    # 1. No-future-contact — false promise of permanent suppression
+    re.compile(r"\b(we|i|the\s+bank)\s+(will\s+not|won'?t)\s+(call|contact)\s+you\s+(again|further|anymore|in\s+future)\b", re.I),
     re.compile(r"\byou\s+won'?t\s+hear\s+from\s+us\b", re.I),
-    re.compile(r"\b(your\s+number\s+has\s+been|i'?ve|we'?ve)\s+"
-               r"(removed|suppressed|deleted|taken\s+off|blacklisted)\b", re.I),
-    re.compile(r"\b(removed|suppressed)\s+(your\s+)?number\b", re.I),
-    re.compile(r"\bno\s+(further|more)\s+(calls|contact|outreach)\s+from\s+(us|the\s+bank)\b", re.I),
-    re.compile(r"\b(your|the)\s+account\s+(will\s+be|is)\s+(removed|suppressed|blacklisted)", re.I),
-    # Personalised-callback overreach (bot doesn't control routing or timing)
-    re.compile(r"\b(a\s+)?(senior\s+)?(manager|colleague|specialist|agent|representative)\s+"
-               r"will\s+(personally\s+)?(call|contact|reach\s+out\s+to|disturb)\s+you\b", re.I),
-    re.compile(r"\bsomeone\s+(from\s+(our\s+)?\w+(\s+\w+){0,3}\s+)?will\s+"
-               r"(call|contact|reach\s+out|personally\s+\w+)\s+(you\s+)?(back\s+)?"
-               r"(within\s+\d+\s*(hour|hr|day|business|working)|on)\b", re.I),
-    re.compile(r"\bi\s+will\s+(personally\s+)?(call|contact|reach\s+out\s+to)\s+you\s+back\b", re.I),
-    re.compile(r"\bwill\s+reach\s+out\s+within\s+\d+\s*(hour|hr|day|business|working)", re.I),
-    # Specific clock guarantees — "within N hours/days" attached to a call/contact verb
-    re.compile(r"\bwithin\s+\d+\s+hours?\s+(to|so|—|-)\s+", re.I),
-    re.compile(r"\b(call|reach\s+out|follow\s+up|contact)\s+(you\s+)?(back\s+)?within\s+\d+\s*(\s+to\s+\d+)?\s+(hour|business\s+hour|working\s+day|day)", re.I),
-    re.compile(r"\bwill\s+(call|reach\s+out|follow\s+up|contact|get\s+in\s+touch)\s+(\w+\s+){0,3}within\s+\d+\s*(\s+to\s+\d+)?\s+(hour|day|business|working)", re.I),
-    re.compile(r"\barrange\s+(for|to)\s+(\w+\s+){0,6}(call|reach|contact)\s+you\s+back\s+within\s+\d+", re.I),
-    # "arrange for a colleague to call you tomorrow morning" — slipped past
-    # in the Demo 2 retry. Specific time-of-day labels (tomorrow morning /
-    # this afternoon / tonight) are clock commitments same as "within N
-    # hours" — the bot doesn't control routing.
-    re.compile(r"\barrange\s+(for|to)\s+(a\s+)?(colleague|manager|specialist|agent|representative)\s+(\w+\s+){0,3}(call|reach|contact)\s+you\b", re.I),
-    re.compile(r"\b(call|contact|reach\s+out|follow\s+up)\s+(you\s+)?(back\s+)?"
-               r"(tonight|tomorrow|(this|tomorrow)\s+(morning|afternoon|evening|night))\b", re.I),
-    re.compile(r"\b(colleague|manager|team)\s+(will|can)\s+(call|reach|contact)\s+you\s+"
-               r"(tonight|tomorrow|(this|tomorrow)\s+(morning|afternoon|evening|night))\b", re.I),
-    # Refund / reversal / waiver overreach
+    re.compile(r"\b(removed|suppressed|deleted|taken\s+off|blacklisted)\s+(your\s+)?(number|account)\b", re.I),
+    re.compile(r"\b(your\s+)?number\s+(has\s+been|is)\s+(removed|suppressed|blacklisted)\b", re.I),
+    re.compile(r"\bno\s+(further|more)\s+(calls|contact)\s+from\s+(us|the\s+bank|our\s+side)\b", re.I),
+
+    # 2. Personalised-callback overreach — STRONG "X will personally call"
+    #    Allows: "a colleague may reach out", "let me arrange a callback",
+    #            "the team can follow up", "someone might call"
+    #    Blocks: "manager WILL personally call you", "specialist WILL contact you"
+    re.compile(r"\b(a\s+)?(senior\s+)?(manager|specialist)\s+will\s+personally\s+(call|contact|reach\s+out\s+to)\s+you\b", re.I),
+    re.compile(r"\bi\s+will\s+personally\s+(call|contact|reach\s+out\s+to)\s+you\b", re.I),
+
+    # 3. Specific clock guarantees attached to a routing promise. Allows
+    #    "we can follow up tomorrow" (soft, no specific routing); blocks
+    #    "a colleague WILL call you within 24 hours" (clock + routing).
+    re.compile(r"\b(a\s+)?(senior\s+)?(manager|colleague|specialist|agent|representative|someone)\s+"
+               r"will\s+(personally\s+)?(call|contact|reach\s+out\s+to)\s+you\s+(back\s+)?within\s+\d+\s+(hour|day|business|working)", re.I),
+    re.compile(r"\b(will|going\s+to)\s+(call|contact|reach\s+out\s+to)\s+you\s+(back\s+)?within\s+\d+\s+(hour|business\s+hour|working\s+day)\b", re.I),
+
+    # 4. Refund / reversal / waiver overreach — bot doesn't have authority
     re.compile(r"\b(i'?ll|we'?ll|i\s+will|we\s+will)\s+(reverse|refund|cancel|waive)\s+"
                r"(the\s+|that\s+|your\s+)?(\w+\s+){0,2}(charge|fee|amount|transaction|interest)\b", re.I),
-    re.compile(r"\byou'?ll\s+get\s+a\s+refund\b", re.I),
+    re.compile(r"\byou'?ll\s+get\s+(a\s+)?refund\b", re.I),
     re.compile(r"\bthe\s+(\w+\s+){0,2}(fee|charge|interest)\s+(is|has\s+been|will\s+be)\s+"
                r"(reversed|refunded|cancelled|waived)\b", re.I),
-    # "Not about payment" / "just to help" — the medical-template overreach
+
+    # 5. Medical-template overreach phrasings — specifically the leak from
+    #    a prior demo. "Not about payment" is misleading (the team WILL
+    #    discuss payment eventually); "put hold on this" implies system
+    #    action the bot doesn't take.
     re.compile(r"\bnot\s+about\s+(the\s+)?(payment|bill|outstanding)\b", re.I),
     re.compile(r"\bput\s+(a\s+)?hold\s+on\s+(this|your\s+account)\b", re.I),
 ]
