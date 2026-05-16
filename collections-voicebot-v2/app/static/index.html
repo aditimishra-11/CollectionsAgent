@@ -493,6 +493,7 @@
         <div><span class="text-gray-500">do_not_pressure:</span> <span class="text-gray-200">${cta.do_not_pressure}</span></div>
         <div><span class="text-gray-500">handoff:</span> <span class="text-gray-200">${cta.handoff_recommendation}</span></div>
         ${cta.next_call_eligible ? `<div><span class="text-gray-500">next call ok:</span> <span class="text-gray-200">${cta.next_call_eligible}</span></div>` : ''}
+        ${cta.policy_rationale ? `<div class="text-gray-600 text-[10px] italic mt-1">policy: ${cta.policy_rationale}</div>` : ''}
       `;
 
       outcomeBody.innerHTML = `
@@ -551,13 +552,20 @@
         const r = byReason[reason] || {};
         Object.assign(base, r);
       }
+      // Layer 2: prefer policy-driven fields from the backend when present
+      // (handoff + callback_sla_hours come from app/policy.py). Static map
+      // is only the fallback for older outcomes.
+      const detail = outcome.outcome_detail || {};
+      const finalSla = (detail.callback_sla_hours ?? base.sla);
+      const finalHandoff = (detail.handoff ?? base.handoff);
       return {
         action: base.action,
         target_team: base.team,
-        sla_hours: base.sla,
+        sla_hours: finalSla,
         do_not_pressure: base.pressure,
-        handoff_recommendation: base.handoff,
+        handoff_recommendation: finalHandoff,
         next_call_eligible: base.next || null,
+        policy_rationale: detail.policy_rationale || null,
       };
     }
 

@@ -13,7 +13,10 @@ Block conditions (from architecture doc):
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.policy import SegmentPolicy
 
 CallStrategy = Literal["apex_concierge", "A_reminder", "B_problem_solving"]
 BlockReason = Literal[
@@ -48,6 +51,10 @@ class PreFilterResult:
     block_reason: BlockReason | None
     strategy: CallStrategy | None
     modifier_keys: dict[str, str]  # e.g. {"history": "first", "bureau": "prime", ...}
+    # Deterministic segment policy resolved once per call. Drives FSM thresholds
+    # (max PTP horizon, abuse strikes, human-takeover routing, callback SLA).
+    # None only for blocked calls.
+    policy: "SegmentPolicy | None" = None
 
 
 def run_prefilter(ctx: CRMContext) -> PreFilterResult:
@@ -83,7 +90,11 @@ def run_prefilter(ctx: CRMContext) -> PreFilterResult:
         "channel": "selfcures" if ctx.self_cure_history else "never",
     }
 
-    return PreFilterResult(False, None, strategy, modifiers)
+    # Resolve deterministic policy thresholds for this segment.
+    from app.policy import resolve as _resolve_policy  # local import avoids cycle at module load
+    policy = _resolve_policy(ctx)
+
+    return PreFilterResult(False, None, strategy, modifiers, policy=policy)
 
 
 def _bureau_band(score: int) -> str:

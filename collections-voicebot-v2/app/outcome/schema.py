@@ -35,6 +35,9 @@ class OutcomeDetail(BaseModel):
     agent_brief: str | None = None
     # refused
     reason_stated: str | None = None
+    # policy-driven (Layer 2): next-action routing for the CRM/orchestrator
+    handoff: Literal["continue_bot", "human_takeover", "route_to_human", "pause"] | None = None
+    policy_rationale: str | None = None
 
 
 class Outcome(BaseModel):

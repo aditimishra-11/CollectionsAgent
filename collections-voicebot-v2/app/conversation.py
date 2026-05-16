@@ -69,6 +69,43 @@ def _directive_from_notes(notes: str) -> str | None:
     return None
 
 
+# ----- Layer 2: PTP-horizon detection ------------------------------------
+# Tripwire phrases that imply a payment date too far out for our policy.
+# Kept deliberately simple — false positives are recoverable (bot still
+# negotiates), but false negatives let the bot confirm absurd PTPs.
+import re as _re
+
+_FAR_OUT_PATTERNS: list[_re.Pattern] = [
+    _re.compile(r"\bnext\s+to\s+next\s+(month|salary|paycheck)\b", _re.I),
+    _re.compile(r"\b(two|three|four|2|3|4)\s+months?\b", _re.I),
+    _re.compile(r"\bafter\s+(two|three|2|3)\s+months?\b", _re.I),
+    _re.compile(r"\b(do|teen)\s+(mahine|maheene)\b", _re.I),
+    _re.compile(r"\bagle\s+(mahine\s+ke\s+baad|salary\s+ke\s+baad)\b", _re.I),
+    _re.compile(r"\bend\s+of\s+(next|the\s+next)\s+month\b", _re.I),
+]
+
+
+def _ptp_horizon_directive(user_text: str, policy) -> str | None:
+    """If the user text proposes a date well beyond policy.max_ptp_days,
+    return a hard turn directive telling the bot to push back. Otherwise None.
+    """
+    if not user_text:
+        return None
+    if not any(p.search(user_text) for p in _FAR_OUT_PATTERNS):
+        return None
+    return (
+        f"POLICY: this customer's segment caps PTP at {policy.max_ptp_days} days "
+        "from today. The customer just proposed a date well beyond that. "
+        "DO NOT confirm or repeat back the far-out date. Push back ONCE: "
+        f"ask if they can commit to anything within {policy.max_ptp_days} days, "
+        f"or take a partial of ₹{policy.partial_floor_inr:,} now and the rest later. "
+        "Be firm but warm. Do not threaten or shame."
+    )
+
+
+# (_apply_policy_to_outcome lives on the Conversation class — see above.)
+
+
 @dataclass
 class ConversationResult:
     call_id: str
@@ -105,6 +142,7 @@ class Conversation:
         self._llm_latencies_ms: list[int] = []
         self._fsm: FSM | None = None
         self._call_parts: PromptParts | None = None
+        self._policy = None  # SegmentPolicy | None — populated in run() after pre-filter
         self._terminal_outcome: str | None = None
         self._terminal_reason: str | None = None
 
@@ -134,8 +172,14 @@ class Conversation:
         # 2. Compose call-level prompt parts
         self._call_parts = self._prompt_builder.build_call_parts(self.ctx, pf)
 
-        # 3. Init FSM
-        self._fsm = FSM(FSMContext(card_tier=self.ctx.card_tier, dpd=self.ctx.dpd))
+        # 3. Init FSM — policy threads through so the FSM enforces segment
+        #    thresholds (abuse strikes, takeover-on-refuse) in code, not prose.
+        self._policy = pf.policy
+        self._fsm = FSM(FSMContext(
+            card_tier=self.ctx.card_tier,
+            dpd=self.ctx.dpd,
+            policy=pf.policy,
+        ))
 
         # 4. Opener (INTRO state — LLM-generated using the segment opener guide)
         opener = self._llm_reply()
@@ -190,6 +234,16 @@ class Conversation:
 
             # Slow path → LLM generates within FSM constraints
             turn_directive = _directive_from_notes(decision.notes)
+            # Layer 2: when the customer proposes a PTP far outside policy,
+            # force the bot to push back rather than confirm it. This catches
+            # the "I'll pay in 2 months" → bot says "got it" failure mode.
+            if state_after == "PTP_PROBE" and self._policy is not None:
+                horizon_directive = _ptp_horizon_directive(user_text, self._policy)
+                if horizon_directive:
+                    turn_directive = (
+                        (turn_directive + "\n\n" + horizon_directive)
+                        if turn_directive else horizon_directive
+                    )
             bot_text_raw = self._llm_reply(turn_directive=turn_directive)
             validation = validate_response(bot_text_raw, state_after)
 
@@ -290,6 +344,12 @@ class Conversation:
             outcome = extractor.extract(self.call_id, self.ctx.customer_id, self.history)
             outcome.audit_log_ref = str(self.audit.path)
 
+        # Layer 2: stamp policy-driven next-action routing onto the outcome
+        # so the CRM/orchestrator sees segment-aware handoff + SLA rather
+        # than guessing from outcome type alone.
+        if self._policy is not None:
+            self._apply_policy_to_outcome(outcome)
+
         post_outcome(outcome)
         return ConversationResult(
             call_id=self.call_id,
@@ -301,6 +361,33 @@ class Conversation:
             llm_input_tokens=getattr(self._llm, "total_input_tokens", 0),
             llm_output_tokens=getattr(self._llm, "total_output_tokens", 0),
         )
+
+    def _apply_policy_to_outcome(self, outcome: Outcome) -> None:
+        """Stamp segment-policy-derived next-action fields onto the outcome.
+
+        Sets ``handoff`` and ``callback_sla_hours`` per the resolved policy,
+        and records ``policy_rationale`` for audit. For ``refused`` outcomes
+        in segments where the policy says ``human_takeover_on_refuse``, the
+        handoff field is upgraded so the CRM/orchestrator routes correctly
+        — even if the FSM itself already returned ``refused``.
+        """
+        policy = self._policy
+        if policy is None:
+            return
+        detail = outcome.outcome_detail
+        detail.policy_rationale = policy.rationale
+        if detail.callback_sla_hours is None:
+            detail.callback_sla_hours = policy.callback_sla_hours
+        handoff_map = {
+            "promise_to_pay": "continue_bot",
+            "already_paid": "continue_bot",
+            "callback_request": "route_to_human",
+            "human_callback_required": "route_to_human",
+            "wrong_number": "pause",
+            "no_answer": "continue_bot",
+            "refused": "human_takeover" if policy.human_takeover_on_refuse else "continue_bot",
+        }
+        detail.handoff = handoff_map.get(outcome.outcome, "continue_bot")  # type: ignore[assignment]
 
     def _blocked_result(self, pf: PreFilterResult, start: float) -> ConversationResult:
         outcome = Outcome(

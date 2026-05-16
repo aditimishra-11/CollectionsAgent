@@ -13,9 +13,12 @@ is code, not prompt.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Literal, TYPE_CHECKING
 
 from app.intent_classifier import FAST_PATH_INTENTS, IntentResult
+
+if TYPE_CHECKING:
+    from app.policy import SegmentPolicy
 
 State = Literal[
     "INTRO",
@@ -73,6 +76,9 @@ class FSMContext:
     # First strike: stay slow-path, let the LLM acknowledge + offer ONE callback.
     # Second strike: terminal REFUSAL_CLOSE (outcome=refused, reason=refused_current_call).
     refuse_current_call_strikes: int = 0
+    # Deterministic segment policy — drives abuse-strike threshold, takeover
+    # routing, and (in Layer 1) the move ladder. None only in legacy tests.
+    policy: "SegmentPolicy | None" = None
 
 
 @dataclass
@@ -119,6 +125,16 @@ class FSM:
             self.context.refuse_current_call_strikes += 1
             if self.context.refuse_current_call_strikes >= 2:
                 self.state = "REFUSAL_CLOSE"
+                # Policy-driven: high-risk segments escalate to human handoff
+                # instead of letting the bot retry next cycle.
+                if self.context.policy and self.context.policy.human_takeover_on_refuse:
+                    return FSMDecision(
+                        next_state="REFUSAL_CLOSE",
+                        is_fast_path=False,
+                        terminal_outcome="human_callback_required",
+                        terminal_reason="refused_current_call_high_risk",
+                        notes="refuse_current_call_second_strike — escalating to human (policy)",
+                    )
                 return FSMDecision(
                     next_state="REFUSAL_CLOSE",
                     is_fast_path=False,
@@ -241,9 +257,12 @@ class FSM:
         if intent == "abuse":
             multi_insult = self._count_insults(last_user_text) >= 2
             self.context.abuse_strikes += 1
-            if not multi_insult and self.context.abuse_strikes < 2:
-                # First strike on a single insult: stay in current state, let
-                # LLM de-escalate. Slow path with one calm reset.
+            strikes_allowed = (
+                self.context.policy.abuse_strikes_allowed if self.context.policy else 2
+            )
+            if not multi_insult and self.context.abuse_strikes < strikes_allowed:
+                # Within strike budget for this segment — stay in current state,
+                # let LLM de-escalate. Frequent late defaulters get 1 strike.
                 return FSMDecision(
                     next_state=self.state,
                     is_fast_path=False,
