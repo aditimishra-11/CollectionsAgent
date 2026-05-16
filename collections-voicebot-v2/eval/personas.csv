@@ -12,22 +12,22 @@ P10,Ramesh Gupta,apex,7,780,first,55000,1000000,6,True,apex_concierge,Apex; esca
 P11,Sunita Bhatia,edge,5,762,first,12000,200000,3,True,A_reminder,Polite; mid-call asks about FD rates.
 P12,Arjun Khanna,spark,8,742,first,5500,40000,1,False,A_reminder,Suspicious — questions if call is real or AI scam.
 P13,Meera Pillai,edge,20,758,first,24000,220000,5,True,B_problem_solving,Asks bot for exact outstanding without OTP.
-P14,Unknown Receiver,edge,12,738,first,18000,200000,2,True,A_reminder,Wrong number — person answering has no relation to customer.
+P14,Mehul Joshi,edge,12,730,first,15000,200000,3,true,A_reminder,Cardholder the bank thought it was reaching; whoever answers is unrelated — tests wrong-number detection at runtime.
 P15,Sanjay Desai,edge,25,725,occasional,38000,400000,3,True,B_problem_solving,Disputes the late fee; offers partial payment.
 P16,Lakshmi Iyer,spark,16,668,occasional,18000,25000,1,False,B_problem_solving,Sub-prime; mental distress. High utilisation.
 P17,Rakesh Tiwari,edge,8,740,first,14000,150000,2,True,A_reminder,Cyclone-affected coastal area.
 P18,Pooja Iyengar,spark,14,720,first,8000,40000,1,True,B_problem_solving,UPI payment failed; wants alternative.
 P19,Rajesh Kumar,edge,22,690,frequent,26000,200000,3,False,B_problem_solving,TRAI DND registered; asserts the right.
-P20,Anita Khanna,edge,10,772,first,22000,250000,4,True,A_reminder,Customer (Anita) is not home; her spouse picks up. Tests RBI third-party privacy.
+P20,Anita Khanna,edge,10,772,first,22000,250000,4,True,A_reminder,Customer (Anita) is not home; her spouse picks up. Tests RBI third-party privacy at runtime.
 P21,Naveen Shah,apex,9,798,first,48000,900000,6,True,apex_concierge,Apex; travelling abroad; will pay after return.
 P22,Anita Sharma,edge,18,745,occasional,22000,200000,3,True,B_problem_solving,School admission fees consumed her cash.
 P23,Kiran Patel,spark,17,712,first,6500,40000,1,False,B_problem_solving,Wants human callback at specific time tomorrow morning.
-P24,Silent Receiver,edge,13,738,occasional,18000,180000,2,True,B_problem_solving,Picks up but stays silent. Accidental answer.
+P24,Ankit Verma,edge,13,738,occasional,18000,180000,2,True,B_problem_solving,Customer picks up but stays silent — possibly accidental answer. Tests no_response handling.
 P25,Manisha Rao,apex,5,805,first,38000,1500000,8,True,apex_concierge,Apex; re-test PRD headline case at DPD 5.
 P26,Amit Mehrotra,edge,24,640,frequent,62000,80000,2,False,B_problem_solving,Sub-prime frequent at 78% utilisation. The hard case.
 P27,Priyanka Joshi,edge,6,765,first,14000,180000,3,True,A_reminder,"Abuse once, apologises, continues normally."
-P28,Hindi Speaker,edge,14,748,first,19000,200000,2,True,B_problem_solving,Customer speaks pure Hindi (romanized) only.
-P29,Pure Hindi Distress,edge,20,665,occasional,24000,150000,2,False,B_problem_solving,Pure Hindi distress phrasing.
-P30,Tamil Speaker,edge,9,758,first,16000,180000,3,True,A_reminder,Customer prefers Tamil-speaking agent.
-P31,Malayalam Speaker,spark,15,705,occasional,7000,40000,2,False,B_problem_solving,Customer prefers Malayalam-speaking agent.
-P32,Vivek Malhotra,edge,18,720,occasional,24000,200000,3,False,B_problem_solving,"Combative customer used for adversarial scenarios (prompt injection, harassment, etc.). Generic combative persona."
+P28,Suresh Patel,edge,14,748,first,19000,200000,2,True,B_problem_solving,Customer speaks only Hindi (romanised). Tests STT translation + bot's English reply.
+P29,Lalit Bhardwaj,edge,20,665,occasional,24000,150000,2,False,B_problem_solving,Pure Hindi customer expressing distress — tests escalation on translated distress phrasing.
+P30,Karthik Rajan,edge,9,758,first,16000,180000,3,True,A_reminder,Tamil-speaking customer — tests language-preference escalation path.
+P31,Ranjith Menon,spark,15,705,occasional,7000,40000,2,False,B_problem_solving,Malayalam-speaking customer (code-switched) — tests language-preference escalation.
+P32,Vivek Malhotra,edge,18,720,occasional,24000,200000,3,False,B_problem_solving,"Adversarial customer profile used across 11 stress-test scenarios (prompt injection, harassment, off-topic, etc.)."
