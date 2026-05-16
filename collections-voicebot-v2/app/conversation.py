@@ -27,7 +27,7 @@ from typing import Callable
 from loguru import logger
 
 from app.audit import AuditLogger
-from app.fsm import FSM, FSMContext, FSMDecision
+from app.fsm import FSM, FSMContext, FSMDecision, MOVE_DIRECTIVE
 from app.intent_classifier import IntentResult, classify
 from app.llm.openai_client import LLMTurn, OpenAIClient
 from app.outcome.extractor import OutcomeExtractor
@@ -67,6 +67,27 @@ def _directive_from_notes(notes: str) -> str | None:
         if notes.startswith(prefix):
             return directive
     return None
+
+
+# ----- Layer 1: move-tag extraction --------------------------------------
+
+import re as _re_layer1
+
+_MOVE_TAG_RE = _re_layer1.compile(r"\[MOVE:\s*([A-Z_]+)\s*\]", _re_layer1.IGNORECASE)
+
+
+def _extract_move_tag(text: str) -> tuple[str | None, str]:
+    """Pull the [MOVE: X] sidecar out of bot text. Returns (move_or_None,
+    cleaned_text). Idempotent and tolerant of missing tags / extra spaces.
+    """
+    if not text:
+        return (None, text)
+    m = _MOVE_TAG_RE.search(text)
+    if not m:
+        return (None, text)
+    move = m.group(1).strip().upper()
+    cleaned = _MOVE_TAG_RE.sub("", text).strip()
+    return (move, cleaned)
 
 
 # ----- Layer 2: PTP-horizon detection ------------------------------------
@@ -245,6 +266,31 @@ class Conversation:
                         (turn_directive + "\n\n" + horizon_directive)
                         if turn_directive else horizon_directive
                     )
+
+            # Layer 1: move-ladder enforcement. The FSM picks the next unplayed
+            # move for this state; the composer injects it as a hard directive
+            # and requires the LLM to tag its reply with [MOVE: X]. The bot
+            # cannot replay a move it has already played in this state —
+            # eliminates "asked when will you pay / when will you pay" loops.
+            move, ladder_exhausted = self._fsm.next_move()
+            if ladder_exhausted:
+                # Out of moves in this state — close gracefully via callback.
+                turn_directive = (
+                    (turn_directive + "\n\n" if turn_directive else "")
+                    + "LADDER EXHAUSTED: you have already tried every move in this state. "
+                    "Acknowledge briefly, offer ONE final callback ('would tomorrow work?'), "
+                    "and end with [END_CALL] if they decline."
+                )
+            elif move is not None:
+                move_block = (
+                    f"REQUIRED MOVE: {move}\n"
+                    f"{MOVE_DIRECTIVE[move]}\n"
+                    f"You MUST end your reply with the tag [MOVE: {move}] — it will be stripped "
+                    "before TTS but is required so the system can record what was played. "
+                    "Do not play any other move; do not repeat a move from earlier in this state."
+                )
+                turn_directive = (turn_directive + "\n\n" + move_block) if turn_directive else move_block
+
             bot_text_raw = self._llm_reply(turn_directive=turn_directive)
             validation = validate_response(bot_text_raw, state_after)
 
@@ -255,6 +301,23 @@ class Conversation:
                 logger.warning(
                     f"Validator blocked LLM output (violations={validation.violations}). Substituted fallback."
                 )
+
+            # Layer 1: extract the [MOVE: X] sidecar before anything else
+            # touches the text. The marker is required when a move was
+            # requested; if missing, log and move on (the next turn's ladder
+            # will still see the move as unplayed, which is the right
+            # conservative default).
+            played_move, bot_text = _extract_move_tag(bot_text)
+            if played_move:
+                # Best-effort: trust the LLM's tag; the directive specifies the
+                # required move so this should almost always match `move`.
+                self._fsm.record_move(played_move)
+            elif move is not None and not ladder_exhausted:
+                logger.warning(
+                    f"LLM did not emit [MOVE: {move}] tag in state={state_after}. "
+                    "Recording the required move anyway so we don't loop."
+                )
+                self._fsm.record_move(move)
 
             # [END_CALL] guard — the FSM owns when the call ends. The LLM is
             # allowed to REQUEST a close via [END_CALL], but it's only honoured

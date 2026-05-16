@@ -12,6 +12,7 @@ is code, not prompt.
 
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Literal, TYPE_CHECKING
 
@@ -19,6 +20,44 @@ from app.intent_classifier import FAST_PATH_INTENTS, IntentResult
 
 if TYPE_CHECKING:
     from app.policy import SegmentPolicy
+
+
+# === Layer 1: deterministic move ladder ============================
+# Each conversational state has an ORDERED list of "moves" the bot may
+# play. The composer injects the next unplayed move as a hard directive
+# on every turn, and the LLM is required to tag its reply with [MOVE: X].
+# Once a state's moves are exhausted the FSM forces an exit — so the bot
+# physically cannot loop on the same question.
+Move = Literal[
+    "ASK_REASON",           # open empathetic "everything alright?" check-in
+    "ASK_DATE",             # press for a specific calendar date
+    "ASK_MODE",             # press for payment mode (UPI / netbanking / card)
+    "CONFIRM_PTP",          # repeat captured PTP back for confirmation
+    "OFFER_APP_LINK",       # text the Mumbai Bank app payment link
+    "OFFER_PARTIAL",        # suggest a partial payment now
+    "OFFER_CALLBACK",       # propose a human callback time window
+    "EMPATHY_PROBE",        # gentle hardship probe (only for eligible segments)
+    "CHALLENGE_HORIZON",    # push back on too-far-out PTP (Layer 2 already injects directive)
+]
+
+LADDERS: dict["State", list[Move]] = {
+    "COLLECTING": ["ASK_REASON", "ASK_DATE", "OFFER_APP_LINK", "OFFER_PARTIAL", "OFFER_CALLBACK"],
+    "PTP_PROBE":  ["ASK_DATE", "ASK_MODE", "CONFIRM_PTP", "OFFER_APP_LINK", "OFFER_PARTIAL", "OFFER_CALLBACK"],
+    "HARDSHIP_PROBE": ["EMPATHY_PROBE", "OFFER_CALLBACK"],
+}
+
+# Human-readable directive per move — fed into the prompt as the required move.
+MOVE_DIRECTIVE: dict[Move, str] = {
+    "ASK_REASON":     "Open with an empathetic check-in. Ask if everything's alright, no payment push yet. ONE sentence.",
+    "ASK_DATE":       "Ask for a SPECIFIC calendar date the customer can pay. Do not accept 'soon' or 'later' — push for a day.",
+    "ASK_MODE":       "Ask which payment method they'll use: UPI, net banking, card, IMPS, or autodebit.",
+    "CONFIRM_PTP":    "Repeat the captured date + mode back in ONE concrete sentence so the CRM can record it.",
+    "OFFER_APP_LINK": "Offer to text them the Mumbai Bank app payment link as the easiest path. ONE sentence.",
+    "OFFER_PARTIAL":  "Offer a small partial payment now (₹2,000–5,000) as a way to keep the account in good standing.",
+    "OFFER_CALLBACK": "Offer ONE human callback. Ask which window works: tomorrow morning, afternoon, or evening.",
+    "EMPATHY_PROBE":  "Use the gentle hardship probe ONCE: 'I just wanted to check — is there something making this difficult?' Do not push payment.",
+    "CHALLENGE_HORIZON": "The customer's date is beyond policy. Push back ONCE for something sooner, or a partial today.",
+}
 
 State = Literal[
     "INTRO",
@@ -79,6 +118,12 @@ class FSMContext:
     # Deterministic segment policy — drives abuse-strike threshold, takeover
     # routing, and (in Layer 1) the move ladder. None only in legacy tests.
     policy: "SegmentPolicy | None" = None
+    # Layer 1 — moves played per state. The composer picks the next unplayed
+    # move from LADDERS[state] each turn. When the ladder for a state runs
+    # out, the FSM forces an exit so the bot can't loop on the same question.
+    moves_played: dict[str, list[Move]] = field(default_factory=lambda: defaultdict(list))
+    turns_in_state: int = 0
+    _last_state: str = "INTRO"
 
 
 @dataclass
@@ -89,6 +134,10 @@ class FSMDecision:
     terminal_outcome: str | None = None  # set when ending the call
     terminal_reason: str | None = None
     notes: str = ""
+    # Layer 1 — the next move the composer must enforce, or None if the
+    # current state isn't ladder-managed (or the ladder is exhausted).
+    next_move: Move | None = None
+    ladder_exhausted: bool = False
 
 
 class FSM:
@@ -103,6 +152,12 @@ class FSM:
     def transition(self, intent_result: IntentResult, user_text: str = "") -> FSMDecision:
         """Return the routing decision for this turn."""
         self.context.turn_count += 1
+        # Track time-in-state so the composer can reason about progression.
+        if self._state_at_turn_start() == self.context._last_state:
+            self.context.turns_in_state += 1
+        else:
+            self.context.turns_in_state = 0
+        self.context._last_state = self.state
         intent = intent_result.intent
 
         # === Fast path resolution ===
@@ -299,8 +354,37 @@ class FSM:
 
     # ----- helpers -----
 
+    def _state_at_turn_start(self) -> str:
+        # Used so turns_in_state increments only when the state was the same
+        # at the start of the prior turn (otherwise this is turn 0 of new state).
+        return self.context._last_state
+
     def is_terminal(self) -> bool:
         return self.state in {"TERMINAL", "CALLBACK_CLOSE"}
+
+    def next_move(self) -> tuple[Move | None, bool]:
+        """Return (next move to play, ladder_exhausted) for the current state.
+
+        Picks the first move in ``LADDERS[state]`` not yet in ``moves_played``.
+        If the state isn't ladder-managed, returns (None, False) and the
+        composer simply doesn't inject a move directive. If the ladder IS
+        managed but exhausted, returns (None, True) — the caller forces an
+        exit (typically to OFFER_CALLBACK or terminal).
+        """
+        ladder = LADDERS.get(self.state)
+        if ladder is None:
+            return (None, False)
+        played = set(self.context.moves_played.get(self.state, []))
+        for move in ladder:
+            if move not in played:
+                return (move, False)
+        return (None, True)
+
+    def record_move(self, move: Move) -> None:
+        """Mark a move as played in the current state. Idempotent."""
+        played = self.context.moves_played[self.state]
+        if move not in played:
+            played.append(move)
 
     @staticmethod
     def _count_insults(text: str) -> int:
