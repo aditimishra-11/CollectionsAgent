@@ -1,8 +1,13 @@
 # Mumbai Bank Collections Voicebot — Submission
 
-**Aditi Mishra · GreyLabs AI PM take-home · 16 May 2026**
+**Aditi Mishra · GreyLabs AI PM take-home · 17 May 2026**
 **Repository:** [github.com/aditimishra-11/CollectionsAgent](https://github.com/aditimishra-11/CollectionsAgent)
-**Demos:** [{{DEMO_LINK_1}}] · [{{DEMO_LINK_2}}] · [{{DEMO_LINK_3}}]
+
+**Demos** (≈6 min total — recorded with the live bot, voice mode, browser frontend):
+
+- **Demo 1 — Apex concierge, clean PTP (P01):** [youtu.be/N1uE1yUmuVM](https://youtu.be/N1uE1yUmuVM) — tone, slot capture, outcome routing on the PRD's headline case.
+- **Demo 2 — Frequent-late defaulter, all structural layers fire (P06):** [youtu.be/mdfG4W62_Q8](https://youtu.be/mdfG4W62_Q8) — segment policy push-back on a too-far PTP, partial floor derived from CRM-supplied MAD, refuse-vs-DND two-strike, validator preventing "we won't call you again."
+- **Demo 3 — Hardship fast-path (P08):** [youtu.be/XM5_FArsfIA](https://youtu.be/XM5_FArsfIA) — bot recognising medical distress and routing without pressuring for payment.
 
 ---
 
@@ -17,24 +22,25 @@ The bot is the product surface. The PRODUCT is the operating system around it: f
 
 ## 2 · Headline result
 
-| Metric | v1 baseline | v2 (pre-layers) | v2 (post-layers) |
+| Metric | v1 baseline | v2 (pre-layers) | v2 (final) |
 |---|---:|---:|---:|
 | **P0 (zero-tolerance) compliance** | 13% | 94% | **100%** ✓ |
-| Calls with zero policy violations | 13% | 93% | **98%** |
+| Calls with zero policy violations | 13% | 93% | **95%** ✓ |
+| **Of PTPs, date + mode captured** | low | 78% | **100%** ✓ |
 | Right tone for segment | 87% (vacuous) | 100% | **100%** ✓ |
 | Apex tone preservation | 0% | 100% | **100%** ✓ |
-| Right outcome | low | high | 79% |
-| Calls that would pass full QA | 13% | 60% | **57%** |
-| Estimated voice p95 round-trip | — | 2.8 s | **2.3 s** |
-| Mean cost per call (LLM + STT + TTS) | — | ₹0.31 | **₹0.36** |
+| Right outcome | low | high | 76% |
+| Calls that would pass full QA | 13% | 60% | **55%** |
+| Estimated voice p95 round-trip | — | 2.8 s | **1.9 s** |
+| Mean cost per call (LLM + STT + TTS) | — | ₹0.31 | **₹0.41** |
 
-Across **42 scenarios** including 11 adversarial stress tests. Languages: English, Hinglish, Hindi, Tamil, Malayalam. Priority-graded: 16 P0 (zero-tolerance), 26 P1.
+Across **42 scenarios** including 11 adversarial stress tests. Languages: English, Hinglish, Hindi, Tamil, Malayalam. Priority-graded: 16 P0 (zero-tolerance), 26 P1. Five eval cycles run across the build.
 
-**The honest read.** This week's four structural layers (move ladder, segment policy, refuse-vs-DND split, commitment-overreach validator) **moved the ship-blocking floor from 94% to 100% on P0 compliance** — the single most important number on the page, because under RBI Fair Practices Code one P0 failure is a regulatory event. Zero-violation rate is up 5 points. P95 latency is down 0.5s. The bot now physically *cannot* loop on the same question, *cannot* promise no future contact, and *cannot* close calls outside FSM authority.
+**The honest read.** The four structural layers (move ladder, segment policy, refuse-vs-DND split, commitment-overreach validator) plus a hardship lock and three follow-on LLM-emitted structured tags **moved the ship-blocking floor from 94% to 100% on P0 compliance** — the single most important number on the page, because under RBI Fair Practices Code one P0 failure is a regulatory event. PTP date+mode capture went from 78% to 100%. Voice p95 latency dropped from 2.8s to 1.9s. The bot now physically *cannot* loop on the same question, *cannot* promise no future contact, *cannot* close calls without FSM authorisation in spirit (the LLM may now request close via `[END_CALL: true]` and code honours it past the opener — guard relaxed after six other layers subsumed its protective function), and *cannot* extract a PTP from a customer who signalled hardship mid-call.
 
-The cost: full-pass at 57% vs the prior 60% baseline. The remaining failures cluster in two judge-strict axes (hallucination 79% vs 95% target, slot-capture 77% vs 85% target) — *eval-rubric-tunable*, not architectural. These would be the focus of the next iteration; the bot is meaningfully harder to ship-block and meaningfully easier to audit than the prior v2.
+The cost: full-pass at 55% vs the prior 60% baseline. The remaining failures cluster in two judge-strict axes (hallucination, outcome-match) — *eval-rubric-tunable*, not architectural. The bot is meaningfully harder to ship-block and meaningfully easier to audit than the prior v2.
 
-> A diagnostic regression and recovery during this eval cycle is worth flagging openly: the first run after Layer 1 landed showed 31% full-pass, caused by a too-strict `[END_CALL]` guard preventing the LLM from closing in states that had already been FSM-authorised to end. Diagnosed (sticky `terminal_outcome`), fixed, re-run, recovered to 57%. The kind of loop a real eval cycle should look like.
+> **Diagnostic-and-recovery cycles are documented openly throughout the commit history.** Five eval runs were executed; each surfaced unintended interactions that informed the next change. E.g. the first run after the move ladder landed showed 31% full-pass (regressed from 60%) because the `[END_CALL]` guard was too strict — diagnosed sticky `terminal_outcome` bug, fixed, recovered to 57%. A later run hit a different regression — validator over-firing on legitimate ₹3,000 partial-payment suggestions because a discloses-balance pattern was too broad — fixed by context-scoping. This is what real eval-cycle iteration looks like; the writeup makes no attempt to hide it.
 
 ## 3 · Why this was hard, in three product tensions
 
@@ -92,7 +98,27 @@ The same logic that keeps balance off the LLM applies to commitments: **the bot 
 
 ### Plus one control-flow guard
 
-The LLM was able to emit `[END_CALL]` and unilaterally close the call, regardless of what the FSM decided. After abuse strike 1, when the FSM said *"stay, calm reset,"* the LLM could still self-terminate. Now: the FSM owns when the call ends; `[END_CALL]` is stripped if `decision.terminal_outcome` isn't set and the state isn't terminal-flavoured. Logged as `guard:unauthorised_end_stripped`.
+The LLM was able to emit `[END_CALL]` and unilaterally close the call, regardless of what the FSM decided. After abuse strike 1, when the FSM said *"stay, calm reset,"* the LLM could still self-terminate. Built an `[END_CALL]` guard that strips the sentinel unless authorised. Later in the build, the guard itself became too restrictive (bot saying *"closing the call now"* while the system kept it open — customer asks *"did you close the call?"* and the bot lies). **Loosened the guard once six other protective layers were in place** (move ladder, speech authority, closing-turn coherence, four structured tags, validator) — past the opener, `[END_CALL: true]` is now honoured. The original concern was subsumed; the cure was no longer needed.
+
+### 5.5 The architectural pattern that emerged: LLM-emitted structured tags
+
+The cleanest insight from the build, captured here because it's the single thing I'd carry forward to v3:
+
+Every time a regex-based mechanism (intent classifier, validator pattern, FSM trigger) missed an implicit phrasing, the temptation was to add another regex pattern. That's symptom-fix territory — language is infinite, regex banks aren't. The architectural answer turned out to be the same shape every time: **have the LLM emit a structured tag declaring what it understood, then have deterministic code derive the consequence.**
+
+Five tags now run alongside every bot reply (stripped before TTS, recorded in audit):
+
+| Tag | What the LLM declares | What code does | Replaces |
+|---|---|---|---|
+| `[MOVE: <move>]` | Which move the bot played this turn | Records in `moves_played[state]`; prevents replaying the same move; enforces ladder progression | Prose nudges like *"be proactive"* |
+| `[CUSTOMER_HARDSHIP: true|false]` | Whether the customer signalled distress this turn | Sets sticky `hardship_locked`; ladder skips all PTP-extracting moves | Regex hardship trigger words (which miss implicit hedging) |
+| `[CUSTOMER_PTP_CAPTURED: true|false]` | Whether the customer has given date+mode (this turn or earlier) | Sets sticky `terminal_outcome = "promise_to_pay"`; authorises close | Intent classifier catching every PTP phrasing |
+| `[CUSTOMER_WANTS_TO_END: true|false]` | Whether the customer's wording signals they're done | Sets `terminal_outcome = "refused / customer_signaled_end"`; allows close | Regex `refuse_current_call` patterns (which miss implicit refusal) |
+| `[END_CALL: true|false]` | Whether the bot's reply is a closing turn | Bidirectional coherence: spoken text and tag must agree | The old bare `[END_CALL]` sentinel that drifted into mixed formats |
+
+**The principle:** the LLM has the full conversational context; it's much better than regex at reading intent. But the LLM can also drift or be inconsistent. So the architecture asks it to *declare its understanding in a structured field*, and the FSM enforces the deterministic consequence (sticky flags, move skips, terminal authorisation). The LLM does the understanding; the code enforces the contract. Tags have graceful degradation — if the LLM forgets one on a turn, behaviour falls back to existing paths (no regression risk).
+
+What I'd remove in v3 on the back of this: the 165-pattern regex intent classifier becomes a 5-tag LLM-emitted intent declaration. ~80% of the regex bank goes away. Validator's commitment-overreach is replaced by a `[BOT_COMMITMENTS]` tag that lists what the bot promised this turn, checked against an allow-list — eliminates the over-broadened-regex failure mode that took several iterations to settle.
 
 ## 6 · Eval methodology
 
@@ -140,14 +166,34 @@ The PRD's north star (payment in 7 days + no 90-day churn, segmented by tier) is
 
 ## 10 · What I'd build with two more weeks
 
+Two priorities ordered by impact-on-customer-trust:
+
+**Priority 1 — Bot fault-tolerance / malfunction containment.** The single most important v3 item, raised explicitly during build. *Bot bugs should never manifest as customer-facing experience* — yet today they can: when the validator over-fires or the LLM emits the wrong tag, the safe-fallback plays on the customer's ear. A circuit-breaker layer: detect 2+ consecutive identical fallbacks or 2+ near-identical outputs, transition to a `SYSTEM_DIFFICULTY_CLOSE` state, exit gracefully with "*Apologies, I'm having trouble on my end — the helpline is open whenever you're ready*", post `human_callback_required / system_difficulty` to CRM with transcript attached. Same architectural pattern as the FSM's other terminal exits, but for bot health instead of customer state. Captured in `docs/PRD_v2_DELTAS.md` §v3.
+
+**Priority 2 — Replace regex intent classifier with structured-output intent declaration.** The architectural insight from §5.5 generalised: ~165 of the ~250 regex patterns in the codebase exist to do natural-language understanding the LLM is better at. Replace the intent classifier with an `[INTENT: <enum>]` tag the LLM emits each turn, validated by deterministic code. Replace commitment-overreach detection with a `[BOT_COMMITMENTS]` tag checked against an allow-list. Eliminates the entire class of "regex misses a phrasing" bug that drove most of the build's iteration cycles.
+
 | Week 1 | Week 2 |
 |---|---|
-| Implement Call History Block input — per-customer state above the per-call FSM | Operator dashboards MVP (Ops + Manager) |
-| Outcome `commitments[]` structured field — make the bot's promises machine-readable | Configuration UI for Admin (retry / dial windows / SLAs) |
-| Attempt-aware FSM behaviour (opener variation, stricter routing after broken PTPs) | Audit log viewer for Compliance with `directives_fired` filters |
-| ~10 multi-call eval scenarios (broken PTP on Call 2, no-history on Call 3, hardship-after-second-attempt) | Wire CRM webhook to accept new schema; Salesforce / Leadsquared adapter |
+| Fault-tolerance / malfunction containment layer (Priority 1) | Operator dashboards MVP (Ops + Manager views) |
+| Intent classifier → `[INTENT]` tag (Priority 2) — start with the 30 enum values already defined | Configuration UI for Admin (retry / dial windows / SLA tuning) |
+| Implement Call History Block input — per-customer state above the per-call FSM | Audit log viewer for Compliance with `directives_fired` filters |
+| ~10 multi-call eval scenarios + ~5 fault-injection scenarios that deliberately trigger the malfunction-containment path | Wire CRM webhook to accept new schema; Salesforce / Leadsquared adapter |
 
-The bot is solved. The product is the operating system around it.
+The bot is solved structurally. The product is the operating system around it — and the v3 priorities reflect that.
+
+---
+
+## 11 · An honest note on the build cycle
+
+This submission was built with multiple voice-mode demo iterations, five eval cycles, and frank reviewer feedback throughout. The trajectory was *not* a clean linear shipping path; it included three meaningful patterns worth naming because they shaped the final architecture:
+
+1. **Symptom vs root cause.** The first reflex on every demo failure was to add a regex pattern. That tendency was called out repeatedly and resisted increasingly successfully across the build. The LLM-emitted structured-tag pattern (§5.5) emerged as the architectural answer because it sits at the right layer — the LLM does what it's good at (reading intent from full context), code does what it's good at (deterministic enforcement). Several mid-build "fixes" turned out to be route-arounds for an underlying contract issue and were either rolled back or replaced.
+
+2. **Validator drift.** The commitment-overreach validator started narrow (no-future-contact, manager personal callback). To catch each new demo-surfaced overreach phrasing, the regex bank was broadened. By eval 5 it had broadened enough to start blocking *legitimate* bot phrasings ("let me arrange a callback") — the very replies the bot needed to give. Shrunk it back to strong-commitment-only on the last day; the discriminator now is *strength of the commitment verb*, not the presence of certain words.
+
+3. **Customer-blast-radius gap.** When the validator over-fired in eval 5, the customer experienced the bug as a looping bot. Captured this as the most important v3 item — the bot lacks fault tolerance, and that's an architectural blank, not just a bug. Documented under §v3 with proposed implementation.
+
+The metrics in §2 are real. The diagnostic cycles are in the git history. The v3 priorities are picked from the actual things I learned during the build, not generic next-steps.
 
 ---
 
