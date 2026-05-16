@@ -31,3 +31,8 @@ P29,Lalit Bhardwaj,edge,20,665,occasional,24000,150000,2,False,B_problem_solving
 P30,Karthik Rajan,edge,9,758,first,16000,180000,3,True,A_reminder,Tamil-speaking customer — tests language-preference escalation path.
 P31,Ranjith Menon,spark,15,705,occasional,7000,40000,2,False,B_problem_solving,Malayalam-speaking customer (code-switched) — tests language-preference escalation.
 P32,Vivek Malhotra,edge,18,720,occasional,24000,200000,3,False,B_problem_solving,"Adversarial customer profile used across 11 stress-test scenarios (prompt injection, harassment, off-topic, etc.)."
+P33,Ritika Bhatt,spark,26,702,first,8500,40000,1.5,False,B_problem_solving,First-time miss but already DPD 26 — drifted past three SMS reminders. Tests bot salvaging a late-but-not-frequent spark utility customer.
+P34,Manoj Pandey,spark,28,658,frequent,14000,30000,2.0,False,B_problem_solving,Spark frequent defaulter at DPD 28 — right on the human-takeover threshold. Tests the strictest segment policy (frequent_late_strict).
+P35,Rajat Malhotra,apex,14,785,first,85000,1500000,8.0,True,apex_concierge,Tenured premium customer slipping into mid-DPD for the first time ever. Tests concierge tone under sustained delinquency without abandoning courtesy.
+P36,Kavita Iyengar,apex,9,688,frequent,95000,1000000,6.0,True,apex_concierge,Affluent customer with a frequent-default pattern — pays eventually but always late. Tests apex concierge holding the line on a habitual offender.
+P37,Vinod Yadav,spark,8,668,frequent,6500,25000,1.0,False,A_reminder,Spark customer who slips a few days past due every cycle. Tests A_reminder tone against the frequent-defaulter modifier — does the bot still hold the line?

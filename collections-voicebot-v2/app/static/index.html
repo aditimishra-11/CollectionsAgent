@@ -95,14 +95,6 @@
           <button data-filter="history" data-value="occasional" class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">occasional</button>
           <button data-filter="history" data-value="frequent" class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">frequent</button>
         </div>
-        <div class="flex items-center gap-1.5" title="What part of the bot do you want to test?">
-          <span class="text-gray-500 uppercase tracking-wider">tests:</span>
-          <button data-filter="scenario" data-value="all"         title="every persona" class="filter-chip chip-active px-2 py-0.5 rounded border border-gray-600 hover:bg-gray-800">all</button>
-          <button data-filter="scenario" data-value="ptp"         title="standard payment-promise call — the typical 'I forgot, I'll pay tomorrow' flow. Tests tone, PTP capture, and confirmation." class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">PTP capture</button>
-          <button data-filter="scenario" data-value="hardship"    title="real distress (job loss, hospital, business shutdown). Tests empathy, hardship probe, and human-handoff routing." class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">hardship handoff</button>
-          <button data-filter="scenario" data-value="adversarial" title="hostile, scam-claim, prompt-injection, DND assertion, wrong-number, third-party answering. Tests the compliance safety net." class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">compliance edge cases</button>
-          <button data-filter="scenario" data-value="language"    title="customer speaks Hindi / Tamil / Malayalam. Tests language detection and graceful handoff." class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">language handoff</button>
-        </div>
       </div>
 
       <div class="flex flex-wrap items-end gap-3">
@@ -261,22 +253,14 @@
     modeIndicator.innerHTML = `MODE: <span class="glow-amber">VOICE</span>`;
 
     // -------------------- persona loading + filters --------------------
-    const filters = { tier: 'all', dpd: 'all', history: 'all', scenario: 'all' };
+    // Filter chips reflect CRM ATTRIBUTES known before a call is placed
+    // (tier / DPD bucket / default history). They mirror the PRD's three
+    // segment dimensions. Behavioural categories (PTP / hardship / adversarial
+    // / language) live in eval/scenarios.yaml, not here — those are discovered
+    // mid-call by the intent classifier, not pre-selected by the reviewer.
+    const filters = { tier: 'all', dpd: 'all', history: 'all' };
     const personaCount = document.getElementById('personaCount');
 
-    // Scenario tag per persona — keyed off persona_id + description heuristics.
-    // hardship  = real-life distress (job/health/business/disaster)
-    // adversarial = abuse, scam-suspect, DND, prompt-injection profile, third-party
-    // language  = non-English primary language
-    // ptp       = standard payment-promise conversation (default)
-    const SCENARIO_TAGS = {
-      P07: 'hardship', P08: 'hardship', P09: 'hardship', P15: 'hardship',
-      P16: 'hardship', P17: 'hardship', P22: 'hardship', P26: 'hardship',
-      P10: 'adversarial', P12: 'adversarial', P14: 'adversarial',
-      P19: 'adversarial', P20: 'adversarial', P27: 'adversarial', P32: 'adversarial',
-      P28: 'language', P29: 'language', P30: 'language', P31: 'language',
-    };
-    function scenarioOf(p) { return SCENARIO_TAGS[p.persona_id] || 'ptp'; }
     function dpdBucket(dpd) {
       const d = Number(dpd);
       if (d <= 10) return 'early';
@@ -287,7 +271,6 @@
       if (filters.tier !== 'all' && p.card_tier !== filters.tier) return false;
       if (filters.dpd !== 'all' && dpdBucket(p.dpd) !== filters.dpd) return false;
       if (filters.history !== 'all' && p.default_history !== filters.history) return false;
-      if (filters.scenario !== 'all' && scenarioOf(p) !== filters.scenario) return false;
       return true;
     }
 
@@ -303,10 +286,9 @@
       if (filtered.length === 0) {
         personaSel.innerHTML = '<option value="">— no matches; loosen filters —</option>';
       } else {
-        personaSel.innerHTML = '<option value="">— pick a customer —</option>' + filtered.map(p => {
-          const tag = scenarioOf(p);
-          return `<option value="${p.persona_id}">${p.persona_id} — ${p.name} · ${p.card_tier} · DPD ${p.dpd} · ${tag}</option>`;
-        }).join('');
+        personaSel.innerHTML = '<option value="">— pick a customer —</option>' + filtered.map(p =>
+          `<option value="${p.persona_id}">${p.persona_id} — ${p.name} · ${p.card_tier} · DPD ${p.dpd} · ${p.default_history}</option>`
+        ).join('');
         // keep previous selection if still valid
         if (filtered.some(p => p.persona_id === prev)) personaSel.value = prev;
       }
