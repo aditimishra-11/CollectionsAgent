@@ -156,14 +156,20 @@
               <span id="vadLabel" class="text-gray-400">initialising…</span>
             </div>
             <span id="voiceStatus" class="text-xs text-gray-500 flex-1"></span>
-            <!-- Manual VAD-profile override — defaults to whatever calibrateAmbient() picked.
-                 If the calibration still leaves false-positives (loud fan), the user can
-                 bump up to "noisy" mid-call. Higher profile = less sensitive mic. -->
-            <div class="flex items-center gap-1 text-[10px] uppercase tracking-wider">
-              <span class="text-gray-600">mic:</span>
-              <button data-vad-profile="quiet"    title="closed-door room, no fan/AC — most sensitive" class="vad-chip px-1.5 py-0.5 rounded border border-gray-700 hover:bg-gray-800">quiet</button>
-              <button data-vad-profile="moderate" title="typical room with ceiling fan or AC — balanced (default)" class="vad-chip px-1.5 py-0.5 rounded border border-gray-700 hover:bg-gray-800">moderate</button>
-              <button data-vad-profile="noisy"    title="loud fan close to mic, traffic, multiple speakers — least sensitive" class="vad-chip px-1.5 py-0.5 rounded border border-gray-700 hover:bg-gray-800">noisy</button>
+            <!-- Auto-detected from 1.5 s ambient calibration on call start.
+                 Read-only by default. "(adjust)" expands an override panel if
+                 the customer is having mic trouble mid-call. -->
+            <div id="vadProfileDisplay" class="text-[11px] text-gray-500 flex items-center gap-2">
+              <span>detected mic:</span>
+              <span id="vadProfileName" class="text-gray-300 font-medium">—</span>
+              <button id="vadProfileToggle" type="button"
+                      class="text-[10px] text-gray-600 hover:text-gray-300 underline-offset-2 hover:underline"
+                      title="open mic sensitivity controls">(adjust)</button>
+            </div>
+            <div id="vadProfileControls" class="hidden flex items-center gap-1 text-[10px] uppercase tracking-wider">
+              <button data-vad-profile="quiet"    title="closed-door room, no fan/AC — most sensitive" class="vad-chip px-1.5 py-0.5 rounded border border-gray-700 hover:bg-gray-800">more sensitive</button>
+              <button data-vad-profile="moderate" title="typical room, balanced — default" class="vad-chip px-1.5 py-0.5 rounded border border-gray-700 hover:bg-gray-800">balanced</button>
+              <button data-vad-profile="noisy"    title="loud fan/AC close to mic — least sensitive" class="vad-chip px-1.5 py-0.5 rounded border border-gray-700 hover:bg-gray-800">less sensitive</button>
             </div>
             <audio id="botAudio" hidden></audio>
           </div>
@@ -749,10 +755,16 @@
     // "moderate" or "noisy" profile, raising thresholds enough that the
     // ambient floor doesn't trip Silero. The user can override via the
     // VAD profile chip on the UI.
+    // Library defaults are ~0.5 threshold + 3 frames (~290 ms). The earlier
+    // values were 3–5× stricter than that and were rejecting short utterances
+    // ("Yes, this is Suresh" is < 1.5 s of continuous speech and fired
+    // onVADMisfire instead of onSpeechEnd). These graduated values stay
+    // above the lib defaults (echo / noise rejection) but accept normal
+    // short answers as speech.
     const VAD_PROFILES = {
-      quiet:    { positiveSpeechThreshold: 0.70, negativeSpeechThreshold: 0.45, minSpeechFrames: 12, redemptionFrames: 24, bargeinHoldMs: 500 },
-      moderate: { positiveSpeechThreshold: 0.78, negativeSpeechThreshold: 0.50, minSpeechFrames: 16, redemptionFrames: 28, bargeinHoldMs: 700 },
-      noisy:    { positiveSpeechThreshold: 0.85, negativeSpeechThreshold: 0.60, minSpeechFrames: 20, redemptionFrames: 32, bargeinHoldMs: 900 },
+      quiet:    { positiveSpeechThreshold: 0.50, negativeSpeechThreshold: 0.35, minSpeechFrames: 4,  redemptionFrames: 20, bargeinHoldMs: 400 },
+      moderate: { positiveSpeechThreshold: 0.60, negativeSpeechThreshold: 0.40, minSpeechFrames: 6,  redemptionFrames: 22, bargeinHoldMs: 550 },
+      noisy:    { positiveSpeechThreshold: 0.70, negativeSpeechThreshold: 0.50, minSpeechFrames: 8,  redemptionFrames: 24, bargeinHoldMs: 700 },
     };
     let currentVadProfile = 'moderate';   // default to moderate (most common case)
     let BARGEIN_HOLD_MS = VAD_PROFILES.moderate.bargeinHoldMs;
@@ -914,15 +926,29 @@
     }
 
     /**
-     * Refresh chip highlight. Called once after calibration and again on
-     * each manual override click.
+     * Update the read-only profile display + chip highlight. Called after
+     * calibration and after each manual override.
      */
     function _refreshVadChips() {
+      const nameEl = document.getElementById('vadProfileName');
+      if (nameEl) nameEl.textContent = currentVadProfile;
       document.querySelectorAll('.vad-chip').forEach(b => {
         const active = b.dataset.vadProfile === currentVadProfile;
         b.classList.toggle('bg-green-900/40', active);
         b.classList.toggle('border-green-700', active);
         b.classList.toggle('text-green-300', active);
+      });
+    }
+    // (adjust) link — reveals the override chips so a customer with a noisy
+    // room or quiet voice can manually shift profiles mid-call.
+    const _vadProfileToggle = document.getElementById('vadProfileToggle');
+    const _vadProfileControls = document.getElementById('vadProfileControls');
+    if (_vadProfileToggle && _vadProfileControls) {
+      _vadProfileToggle.addEventListener('click', () => {
+        const hidden = _vadProfileControls.classList.contains('hidden');
+        _vadProfileControls.classList.toggle('hidden', !hidden);
+        _vadProfileControls.classList.toggle('flex', hidden);
+        _vadProfileToggle.textContent = hidden ? '(hide)' : '(adjust)';
       });
     }
     document.querySelectorAll('.vad-chip').forEach(btn => {
@@ -931,9 +957,9 @@
         if (!profile || profile === currentVadProfile) return;
         currentVadProfile = profile;
         _refreshVadChips();
-        voiceStatus.textContent = `switching mic profile -> ${profile}...`;
+        voiceStatus.textContent = `switching mic profile → ${profile}…`;
         // Restart VAD with the new profile. Silero thresholds aren't mutable
-        // mid-stream so we tear down and rebuild — quick (~200ms).
+        // mid-stream so we tear down and rebuild — quick (~200 ms).
         stopVAD();
         if (currentCallId) await setupVAD();
       });
