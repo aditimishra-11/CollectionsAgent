@@ -235,9 +235,10 @@ class Conversation:
             # Slow path → LLM generates within FSM constraints
             turn_directive = _directive_from_notes(decision.notes)
             # Layer 2: when the customer proposes a PTP far outside policy,
-            # force the bot to push back rather than confirm it. This catches
-            # the "I'll pay in 2 months" → bot says "got it" failure mode.
-            if state_after == "PTP_PROBE" and self._policy is not None:
+            # force the bot to push back rather than confirm it. Fires in any
+            # PTP-adjacent state (PTP_PROBE or COLLECTING) so a missed
+            # promise_to_pay classification can't bypass the policy.
+            if state_after in {"PTP_PROBE", "COLLECTING"} and self._policy is not None:
                 horizon_directive = _ptp_horizon_directive(user_text, self._policy)
                 if horizon_directive:
                     turn_directive = (

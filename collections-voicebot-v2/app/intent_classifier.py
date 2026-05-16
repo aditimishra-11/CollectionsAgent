@@ -364,11 +364,14 @@ _INTENTS: list[tuple[str, IntentPath, list[re.Pattern]]] = [
         "promise_to_pay",
         "slow",
         [
-            re.compile(r"\b(i\s+will|main|hum)\s+(pay|de\s+dunga|kar\s+dunga|kar\s+dungi)\b", re.I),
+            # "I will pay" / "I'll pay" / "main pay" / "hum pay"
+            re.compile(r"\b(i\s+will|i\s*'?\s*ll|main|hum)\s+(pay|de\s+dunga|kar\s+dunga|kar\s+dungi)\b", re.I),
             re.compile(r"\b(kar\s+dunga|kar\s+dungi|de\s+dunga|de\s+dungi)\b", re.I),
-            re.compile(r"\bpay\s+(by|tomorrow|aaj|kal|tomorrow|next\s+week|this\s+week)\b", re.I),
+            re.compile(r"\bpay\s+(it|the\s+amount|the\s+bill|the\s+payment)?\s*(by|tomorrow|aaj|kal|next\s+week|this\s+week|next\s+month|after|once)\b", re.I),
             re.compile(r"\b(today|aaj|kal|tomorrow|tonight|tuesday|wednesday|thursday|friday|saturday|sunday|monday)\s+(tak|by|will\s+pay)", re.I),
             re.compile(r"\b\d{1,2}(st|nd|rd|th)?\s+(tak|by)\b", re.I),
+            # "I'll pay next month" / "I'll pay it next to next month" — common Hinglish phrasing
+            re.compile(r"\b(i\s+will|i\s*'?\s*ll|main|hum)\s+pay\s+(it\s+)?(next|after|once|when|by)\b", re.I),
         ],
     ),
     (

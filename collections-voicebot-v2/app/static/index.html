@@ -114,16 +114,9 @@
             <option value="">loading…</option>
           </select>
         </div>
-        <div class="flex items-end gap-2">
-          <label class="text-xs text-gray-500 uppercase tracking-wider mr-1">$ mode</label>
-          <button id="modeTextBtn" type="button"
-                  class="px-3 py-1.5 text-xs rounded border border-gray-700 bg-gray-900 hover:bg-gray-800 mode-btn active">
-            text
-          </button>
-          <button id="modeVoiceBtn" type="button"
-                  class="px-3 py-1.5 text-xs rounded border border-gray-700 bg-gray-900 hover:bg-gray-800 mode-btn">
-            voice
-          </button>
+        <!-- voice is the only mode — phone-call interaction by default -->
+        <div class="text-xs text-gray-600 px-2 py-1.5 border border-gray-800 rounded bg-gray-900/50">
+          🎤 voice mode
         </div>
         <button id="startBtn"
                 class="bg-green-700 hover:bg-green-600 text-white text-sm font-medium px-4 py-1.5 rounded border border-green-600 disabled:bg-gray-700 disabled:border-gray-700 disabled:cursor-not-allowed">
@@ -153,16 +146,14 @@
         </div>
         <!-- Input area: text OR voice -->
         <div class="border-t border-gray-700 px-3 py-3 bg-gray-900">
-          <!-- text input -->
-          <form id="sendForm" class="flex gap-2">
+          <!-- text input retained as hidden DOM (kept so JS that touches
+               sendForm/userInput/sendBtn doesn't throw); never shown to the user. -->
+          <form id="sendForm" class="hidden gap-2">
             <span class="text-green-400 text-sm self-center">$</span>
             <input id="userInput" type="text"
-                   class="flex-1 bg-transparent text-sm text-gray-200 focus:outline-none placeholder-gray-600 disabled:opacity-30"
-                   placeholder="type as customer (hinglish ok)…"
+                   class="flex-1 bg-transparent text-sm text-gray-200"
                    disabled />
-            <button type="submit" id="sendBtn"
-                    class="text-xs px-3 py-1 border border-gray-600 rounded hover:bg-gray-800 disabled:opacity-30"
-                    disabled>
+            <button type="submit" id="sendBtn" class="text-xs px-3 py-1 border border-gray-600 rounded" disabled>
               ENTER
             </button>
           </form>
@@ -252,8 +243,6 @@
     const cycleBody = document.getElementById('cycleBody');
     const auditPanel = document.getElementById('auditPanel');
     const auditBody = document.getElementById('auditBody');
-    const modeTextBtn = document.getElementById('modeTextBtn');
-    const modeVoiceBtn = document.getElementById('modeVoiceBtn');
     const voiceControls = document.getElementById('voiceControls');
     const vadDot = document.getElementById('vadDot');
     const vadLabel = document.getElementById('vadLabel');
@@ -263,20 +252,13 @@
     let currentCallId = null;
     let eventSource = null;
     let personas = [];
-    let voiceMode = false;
 
-    // -------------------- mode toggle --------------------
-    function setMode(voice) {
-      voiceMode = voice;
-      modeTextBtn.classList.toggle('bg-gray-700', !voice);
-      modeTextBtn.classList.toggle('border-gray-500', !voice);
-      modeVoiceBtn.classList.toggle('bg-gray-700', voice);
-      modeVoiceBtn.classList.toggle('border-gray-500', voice);
-      modeIndicator.innerHTML = `MODE: <span class="glow-amber">${voice ? 'VOICE' : 'TEXT'}</span>`;
-    }
-    modeTextBtn.addEventListener('click', () => setMode(false));
-    modeVoiceBtn.addEventListener('click', () => setMode(true));
-    setMode(false);
+    // Voice-only mode. Text mode was removed — banks call customers; we model
+    // the same interaction (phone call, mic in, TTS out). Keeping ``voiceMode``
+    // as a constant simplifies the rest of the file without ripping out the
+    // SSE branches.
+    const voiceMode = true;
+    modeIndicator.innerHTML = `MODE: <span class="glow-amber">VOICE</span>`;
 
     // -------------------- persona loading + filters --------------------
     const filters = { tier: 'all', dpd: 'all', history: 'all', scenario: 'all' };
@@ -597,16 +579,10 @@
         currentCallId = data.call_id;
         // CRM panel already populated from dropdown; just refresh segmentation
         renderSegmentation(data.strategy, data.modifiers);
-        if (voiceMode) {
-          sendForm.classList.add('hidden');
-          voiceControls.classList.remove('hidden');
-          voiceControls.classList.add('flex');
-          await setupVAD();
-        } else {
-          userInput.disabled = false;
-          sendBtn.disabled = false;
-          userInput.focus();
-        }
+        sendForm.classList.add('hidden');
+        voiceControls.classList.remove('hidden');
+        voiceControls.classList.add('flex');
+        await setupVAD();
         endBtn.classList.remove('hidden');
         startBtn.textContent = '● LIVE';
         openStream(data.call_id);
@@ -624,7 +600,7 @@
         const data = JSON.parse(e.data);
         if (data.type === 'bot') {
           addLine('bot', data.text);
-          if (voiceMode && data.audio_b64) {
+          if (data.audio_b64) {
             playBase64Audio(data.audio_b64, data.sample_rate || 22050);
           }
         } else if (data.type === 'fsm') {
@@ -694,50 +670,109 @@
       vadLabel.textContent = cfg.label;
     }
 
+    // ---- VAD tuning ------------------------------------------------------
+    // Three problems we're solving here:
+    //   (1) over-sensitive barge-in cutting the bot on echo blips,
+    //   (2) two-sentence customer turns landing as two separate user messages
+    //       (each with its own bot reply), and
+    //   (3) keeping intentional interruption working.
+    //
+    // The fix is three small layers on top of Silero VAD:
+    //   - higher thresholds + longer minSpeechFrames so echo doesn't sustain
+    //   - DEFERRED BARGE-IN: speech_start does not immediately cut the bot;
+    //     we wait BARGEIN_HOLD_MS to confirm the speech is real
+    //   - UTTERANCE COALESCING: after speech_end, hold the audio for
+    //     SETTLE_MS — if speech_start fires again in that window, accumulate
+    //     samples and submit as one user turn when speech actually ends
+    const BARGEIN_HOLD_MS = 350;     // sustained speech before we cut bot audio
+    const SETTLE_MS       = 1000;    // post-utterance window to coalesce a follow-up
+
+    let bargeInTimer = null;
+    let settleTimer  = null;
+    let pendingAudio = null;         // Float32Array accumulated across coalesced utterances
+
+    function _concatFloat32(a, b) {
+      const out = new Float32Array(a.length + b.length);
+      out.set(a, 0);
+      out.set(b, a.length);
+      return out;
+    }
+
+    async function _submitUtterance(audioBuf) {
+      setVadIndicator('sending');
+      const wav = encodeWAV(audioBuf, TARGET_SR);
+      const blob = new Blob([wav], { type: 'audio/wav' });
+      const form = new FormData();
+      form.append('audio', blob, 'utt.wav');
+      try {
+        const res = await fetch(`/api/call/${currentCallId}/audio_in`, { method: 'POST', body: form });
+        if (!res.ok) { addLine('error', 'STT failed: ' + res.status); }
+        else {
+          const data = await res.json();
+          addLine('user', data.transcript || '(no transcript)');
+        }
+      } catch (e) {
+        addLine('error', 'upload: ' + e.message);
+      } finally {
+        setVadIndicator('idle');
+      }
+    }
+
     async function setupVAD() {
       setVadIndicator('init');
       voiceStatus.textContent = '';
       try {
         // First-load downloads Silero ONNX model from CDN (~1MB).
         micVad = await vad.MicVAD.new({
-          // Tuned for Hinglish + barge-in: minSpeechFrames=6 (~375ms) is the
-          // sustained-speech threshold that distinguishes real interruption
-          // from echo blips of the bot's own audio.
-          positiveSpeechThreshold: 0.55,
-          negativeSpeechThreshold: 0.35,
-          minSpeechFrames: 6,           // ~375ms sustained = real speech (echo blips don't sustain)
+          // Higher thresholds: only confident speech triggers, sustained
+          // ~625ms before we treat it as a real utterance. Echo blips of the
+          // bot's own voice don't survive these.
+          positiveSpeechThreshold: 0.65,
+          negativeSpeechThreshold: 0.40,
+          minSpeechFrames: 10,          // ~625ms sustained = real speech
           preSpeechPadFrames: 10,
-          redemptionFrames: 16,         // ~500ms silence to end utterance
+          redemptionFrames: 24,         // ~750ms silence to end utterance (longer = fewer accidental splits)
+
           onSpeechStart: () => {
-            // If bot is currently speaking, this is a BARGE-IN — cut its audio.
-            if (botIsSpeaking) {
-              stopCurrentBotAudio();
-              addLine('system', 'customer interrupted');
+            // If we're in the post-utterance settle window, the customer is
+            // CONTINUING — cancel the pending submit so we coalesce.
+            if (settleTimer) {
+              clearTimeout(settleTimer);
+              settleTimer = null;
+            }
+            // Barge-in is DEFERRED — only cut the bot if speech truly sustains.
+            // A 350ms hold filters out the click/echo false-positives that
+            // were chopping the bot mid-sentence.
+            if (botIsSpeaking && !bargeInTimer) {
+              bargeInTimer = setTimeout(() => {
+                bargeInTimer = null;
+                if (botIsSpeaking) {
+                  stopCurrentBotAudio();
+                  addLine('system', 'customer interrupted');
+                }
+              }, BARGEIN_HOLD_MS);
             }
             setVadIndicator('listening');
           },
+
           onVADMisfire: () => {
-            // Short blip — likely echo or a click; ignore.
+            // Speech didn't sustain past minSpeechFrames — false alarm.
+            // Cancel any pending barge-in so we don't cut the bot for noise.
+            if (bargeInTimer) { clearTimeout(bargeInTimer); bargeInTimer = null; }
             if (!botIsSpeaking) setVadIndicator('idle');
           },
+
           onSpeechEnd: async (audio) => {
-            setVadIndicator('sending');
-            const wav = encodeWAV(audio, TARGET_SR);
-            const blob = new Blob([wav], { type: 'audio/wav' });
-            const form = new FormData();
-            form.append('audio', blob, 'utt.wav');
-            try {
-              const res = await fetch(`/api/call/${currentCallId}/audio_in`, { method: 'POST', body: form });
-              if (!res.ok) { addLine('error', 'STT failed: ' + res.status); }
-              else {
-                const data = await res.json();
-                addLine('user', data.transcript || '(no transcript)');
-              }
-            } catch (e) {
-              addLine('error', 'upload: ' + e.message);
-            } finally {
-              setVadIndicator('idle');
-            }
+            // Coalesce: accumulate samples; only ACTUALLY submit after
+            // SETTLE_MS of silence with no follow-up speech.
+            pendingAudio = pendingAudio ? _concatFloat32(pendingAudio, audio) : audio;
+            if (settleTimer) clearTimeout(settleTimer);
+            settleTimer = setTimeout(async () => {
+              settleTimer = null;
+              const buf = pendingAudio;
+              pendingAudio = null;
+              if (buf) await _submitUtterance(buf);
+            }, SETTLE_MS);
           },
         });
         micVad.start();
@@ -754,6 +789,10 @@
         try { micVad.destroy(); } catch (e) {}
         micVad = null;
       }
+      // Clear any inflight coalesce/barge-in state so the next call starts clean.
+      if (bargeInTimer) { clearTimeout(bargeInTimer); bargeInTimer = null; }
+      if (settleTimer)  { clearTimeout(settleTimer);  settleTimer  = null; }
+      pendingAudio = null;
     }
 
     // Float32 PCM → 16-bit WAV bytes
