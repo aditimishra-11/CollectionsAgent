@@ -150,12 +150,21 @@
             </button>
           </form>
           <!-- voice control — continuous Silero VAD, phone-call style -->
-          <div id="voiceControls" class="hidden flex items-center gap-3">
+          <div id="voiceControls" class="hidden flex flex-wrap items-center gap-3">
             <div id="vadIndicator" class="flex items-center gap-2 text-sm">
               <span id="vadDot" class="inline-block w-2.5 h-2.5 rounded-full bg-gray-600"></span>
               <span id="vadLabel" class="text-gray-400">initialising…</span>
             </div>
-            <span id="voiceStatus" class="text-xs text-gray-500"></span>
+            <span id="voiceStatus" class="text-xs text-gray-500 flex-1"></span>
+            <!-- Manual VAD-profile override — defaults to whatever calibrateAmbient() picked.
+                 If the calibration still leaves false-positives (loud fan), the user can
+                 bump up to "noisy" mid-call. Higher profile = less sensitive mic. -->
+            <div class="flex items-center gap-1 text-[10px] uppercase tracking-wider">
+              <span class="text-gray-600">mic:</span>
+              <button data-vad-profile="quiet"    title="closed-door room, no fan/AC — most sensitive" class="vad-chip px-1.5 py-0.5 rounded border border-gray-700 hover:bg-gray-800">quiet</button>
+              <button data-vad-profile="moderate" title="typical room with ceiling fan or AC — balanced (default)" class="vad-chip px-1.5 py-0.5 rounded border border-gray-700 hover:bg-gray-800">moderate</button>
+              <button data-vad-profile="noisy"    title="loud fan close to mic, traffic, multiple speakers — least sensitive" class="vad-chip px-1.5 py-0.5 rounded border border-gray-700 hover:bg-gray-800">noisy</button>
+            </div>
             <audio id="botAudio" hidden></audio>
           </div>
         </div>
@@ -607,6 +616,11 @@
         sendForm.classList.add('hidden');
         voiceControls.classList.remove('hidden');
         voiceControls.classList.add('flex');
+        // 1.5s ambient-noise calibration before VAD setup. Picks one of
+        // {quiet, moderate, noisy} profile so fan/AC background doesn't
+        // false-trigger Silero. Customer can override via the chip below.
+        currentVadProfile = await calibrateAmbient();
+        _refreshVadChips();
         await setupVAD();
         endBtn.classList.remove('hidden');
         startBtn.textContent = '● LIVE';
@@ -702,19 +716,78 @@
     //       (each with its own bot reply), and
     //   (3) keeping intentional interruption working.
     //
-    // The fix is three small layers on top of Silero VAD:
-    //   - higher thresholds + longer minSpeechFrames so echo doesn't sustain
+    // Stacked layers on top of Silero VAD:
+    //   - profile-based thresholds (selected by 1.5s ambient calibration)
     //   - DEFERRED BARGE-IN: speech_start does not immediately cut the bot;
     //     we wait BARGEIN_HOLD_MS to confirm the speech is real
     //   - UTTERANCE COALESCING: after speech_end, hold the audio for
     //     SETTLE_MS — if speech_start fires again in that window, accumulate
     //     samples and submit as one user turn when speech actually ends
-    const BARGEIN_HOLD_MS = 350;     // sustained speech before we cut bot audio
-    const SETTLE_MS       = 1000;    // post-utterance window to coalesce a follow-up
+    //
+    // PROFILES are auto-selected by sampling 1.5s of ambient audio before
+    // the call starts. A fan / AC / traffic background pushes us to the
+    // "moderate" or "noisy" profile, raising thresholds enough that the
+    // ambient floor doesn't trip Silero. The user can override via the
+    // VAD profile chip on the UI.
+    const VAD_PROFILES = {
+      quiet:    { positiveSpeechThreshold: 0.70, negativeSpeechThreshold: 0.45, minSpeechFrames: 12, redemptionFrames: 24, bargeinHoldMs: 500 },
+      moderate: { positiveSpeechThreshold: 0.78, negativeSpeechThreshold: 0.50, minSpeechFrames: 16, redemptionFrames: 28, bargeinHoldMs: 700 },
+      noisy:    { positiveSpeechThreshold: 0.85, negativeSpeechThreshold: 0.60, minSpeechFrames: 20, redemptionFrames: 32, bargeinHoldMs: 900 },
+    };
+    let currentVadProfile = 'moderate';   // default to moderate (most common case)
+    let BARGEIN_HOLD_MS = VAD_PROFILES.moderate.bargeinHoldMs;
+    const SETTLE_MS = 1000;      // post-utterance window to coalesce a follow-up (profile-independent)
 
     let bargeInTimer = null;
     let settleTimer  = null;
     let pendingAudio = null;         // Float32Array accumulated across coalesced utterances
+
+    /**
+     * Sample 1.5 s of ambient audio and classify the room as quiet / moderate /
+     * noisy. Median RMS is the discriminator — robust to a single loud event
+     * (door slam) but tracks sustained noise (fan, AC, traffic).
+     */
+    async function calibrateAmbient() {
+      setVadIndicator('calibrating');
+      voiceStatus.textContent = 'Listening to room — please stay quiet for ~1.5 s...';
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+        const source = audioCtx.createMediaStreamSource(stream);
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 2048;
+        source.connect(analyser);
+        const buf = new Float32Array(analyser.fftSize);
+        const rmsSamples = [];
+        const startedAt = Date.now();
+        while (Date.now() - startedAt < 1500) {
+          analyser.getFloatTimeDomainData(buf);
+          let sumSq = 0;
+          for (let i = 0; i < buf.length; i++) sumSq += buf[i] * buf[i];
+          rmsSamples.push(Math.sqrt(sumSq / buf.length));
+          await new Promise(r => setTimeout(r, 50));
+        }
+        source.disconnect();
+        stream.getTracks().forEach(t => t.stop());
+        try { await audioCtx.close(); } catch (e) {}
+
+        rmsSamples.sort((a, b) => a - b);
+        const median = rmsSamples[Math.floor(rmsSamples.length / 2)];
+        // Empirical thresholds — tuned for typical laptop mic.
+        // < 0.005  → quiet (closed-door room, no AC, no fan)
+        // 0.005-0.015 → moderate (typical Indian room — ceiling fan, AC, ambient hum)
+        // > 0.015  → noisy (loud fan close to mic, traffic, multiple speakers)
+        let profile;
+        if (median < 0.005) profile = 'quiet';
+        else if (median < 0.015) profile = 'moderate';
+        else profile = 'noisy';
+        voiceStatus.textContent = `mic calibrated: ${profile} room (RMS ${median.toFixed(4)})`;
+        return profile;
+      } catch (e) {
+        voiceStatus.textContent = 'calibration failed — using default profile (moderate)';
+        return 'moderate';
+      }
+    }
 
     function _concatFloat32(a, b) {
       const out = new Float32Array(a.length + b.length);
@@ -747,16 +820,16 @@
       setVadIndicator('init');
       voiceStatus.textContent = '';
       try {
+        // Profile is set by calibrateAmbient() before this is called.
+        const cfg = VAD_PROFILES[currentVadProfile] || VAD_PROFILES.moderate;
+        BARGEIN_HOLD_MS = cfg.bargeinHoldMs;
         // First-load downloads Silero ONNX model from CDN (~1MB).
         micVad = await vad.MicVAD.new({
-          // Higher thresholds: only confident speech triggers, sustained
-          // ~625ms before we treat it as a real utterance. Echo blips of the
-          // bot's own voice don't survive these.
-          positiveSpeechThreshold: 0.65,
-          negativeSpeechThreshold: 0.40,
-          minSpeechFrames: 10,          // ~625ms sustained = real speech
+          positiveSpeechThreshold: cfg.positiveSpeechThreshold,
+          negativeSpeechThreshold: cfg.negativeSpeechThreshold,
+          minSpeechFrames: cfg.minSpeechFrames,
           preSpeechPadFrames: 10,
-          redemptionFrames: 24,         // ~750ms silence to end utterance (longer = fewer accidental splits)
+          redemptionFrames: cfg.redemptionFrames,
 
           onSpeechStart: () => {
             // If we're in the post-utterance settle window, the customer is
@@ -819,6 +892,32 @@
       if (settleTimer)  { clearTimeout(settleTimer);  settleTimer  = null; }
       pendingAudio = null;
     }
+
+    /**
+     * Refresh chip highlight. Called once after calibration and again on
+     * each manual override click.
+     */
+    function _refreshVadChips() {
+      document.querySelectorAll('.vad-chip').forEach(b => {
+        const active = b.dataset.vadProfile === currentVadProfile;
+        b.classList.toggle('bg-green-900/40', active);
+        b.classList.toggle('border-green-700', active);
+        b.classList.toggle('text-green-300', active);
+      });
+    }
+    document.querySelectorAll('.vad-chip').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const profile = btn.dataset.vadProfile;
+        if (!profile || profile === currentVadProfile) return;
+        currentVadProfile = profile;
+        _refreshVadChips();
+        voiceStatus.textContent = `switching mic profile -> ${profile}...`;
+        // Restart VAD with the new profile. Silero thresholds aren't mutable
+        // mid-stream so we tear down and rebuild — quick (~200ms).
+        stopVAD();
+        if (currentCallId) await setupVAD();
+      });
+    });
 
     // Float32 PCM → 16-bit WAV bytes
     function encodeWAV(samples, sampleRate) {

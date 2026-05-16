@@ -174,20 +174,30 @@ _FAR_OUT_PATTERNS: list[_re.Pattern] = [
 ]
 
 
-def _ptp_horizon_directive(user_text: str, policy) -> str | None:
+def _ptp_horizon_directive(user_text: str, policy, ctx=None) -> str | None:
     """If the user text proposes a date well beyond policy.max_ptp_days,
     return a hard turn directive telling the bot to push back. Otherwise None.
+
+    The partial-floor figure is derived from CRM data (Minimum Amount Due)
+    via :func:`app.policy.resolve_partial_floor` — not a hardcoded constant.
     """
     if not user_text:
         return None
     if not any(p.search(user_text) for p in _FAR_OUT_PATTERNS):
         return None
+    # Resolve the bank's MAD-derived partial floor for this call. Falls back
+    # to the segment overlay if ctx isn't supplied (legacy callers).
+    from app.policy import resolve_partial_floor
+    partial_floor = (
+        resolve_partial_floor(ctx, policy) if ctx is not None
+        else policy.partial_floor_overlay_inr or 2000
+    )
     return (
         f"POLICY: this customer's segment caps PTP at {policy.max_ptp_days} days "
         "from today. The customer just proposed a date well beyond that. "
         "DO NOT confirm or repeat back the far-out date. Push back ONCE: "
         f"ask if they can commit to anything within {policy.max_ptp_days} days, "
-        f"or take a partial of ₹{policy.partial_floor_inr:,} now and the rest later. "
+        f"or take a partial of at least ₹{partial_floor:,} now and the rest later. "
         "Be firm but warm. Do not threaten or shame."
     )
 
@@ -349,7 +359,7 @@ class Conversation:
 
             # Layer 2: PTP-horizon push-back
             if state_after in {"PTP_PROBE", "COLLECTING"} and self._policy is not None:
-                horizon_directive = _ptp_horizon_directive(user_text, self._policy)
+                horizon_directive = _ptp_horizon_directive(user_text, self._policy, self.ctx)
                 if horizon_directive:
                     turn_directive = (
                         (turn_directive + "\n\n" + horizon_directive)
