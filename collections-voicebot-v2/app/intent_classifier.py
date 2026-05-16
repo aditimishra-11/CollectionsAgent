@@ -364,7 +364,17 @@ _INTENTS: list[tuple[str, IntentPath, list[re.Pattern]]] = [
         "promise_to_pay",
         "slow",
         [
-            # "I will pay" / "I'll pay" / "main pay" / "hum pay"
+            # NOTE: this regex bank is intentionally not exhaustive. The
+            # architecturally-correct mechanism is the LLM's [MOVE: CONFIRM_PTP]
+            # tag — when the LLM understands the customer committed and
+            # confirms it back, conversation.py sets terminal_outcome via
+            # the sticky-terminal-via-move path. Adding more regex variants
+            # for every phrasing ("I'll make the payment", "I'll settle",
+            # "I'll handle it", etc.) is symptom-fix territory — every demo
+            # surfaces a new one. Trust the move-tag instead.
+            #
+            # Patterns below cover the most common explicit phrasings; the
+            # LLM handles everything else.
             re.compile(r"\b(i\s+will|i\s*'?\s*ll|main|hum)\s+(pay|de\s+dunga|kar\s+dunga|kar\s+dungi)\b", re.I),
             re.compile(r"\b(kar\s+dunga|kar\s+dungi|de\s+dunga|de\s+dungi)\b", re.I),
             re.compile(r"\bpay\s+(it|the\s+amount|the\s+bill|the\s+payment)?\s*(by|tomorrow|aaj|kal|next\s+week|this\s+week|next\s+month|after|once)\b", re.I),
@@ -372,12 +382,6 @@ _INTENTS: list[tuple[str, IntentPath, list[re.Pattern]]] = [
             re.compile(r"\b\d{1,2}(st|nd|rd|th)?\s+(tak|by)\b", re.I),
             # "I'll pay next month" / "I'll pay it next to next month" — common Hinglish phrasing
             re.compile(r"\b(i\s+will|i\s*'?\s*ll|main|hum)\s+pay\s+(it\s+)?(next|after|once|when|by)\b", re.I),
-            # "I'll make the payment" / "make a payment" — Demo 1 P01 said this and
-            # was classified as 'general', leaving the FSM stuck in COLLECTING
-            # and the bot unable to close. Common Indian English phrasing.
-            re.compile(r"\b(i\s+will|i\s*'?\s*ll|main|hum)\s+(make|do)\s+(the\s+|a\s+)?payment\b", re.I),
-            re.compile(r"\bmake\s+(the\s+|a\s+)?payment\s+(by|tomorrow|aaj|kal|today|tonight|next\s+week|this\s+week)\b", re.I),
-            re.compile(r"\b(i\s+will|i\s*'?\s*ll|main|hum)\s+(clear|settle|sort\s+out)\s+(it|the\s+(bill|payment|amount))\b", re.I),
         ],
     ),
     (
