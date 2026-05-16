@@ -35,11 +35,34 @@ ASKS_FOR_SENSITIVE = [
     re.compile(r"\bdate\s+of\s+birth\b", re.I),
 ]
 DISCLOSES_BALANCE = [
-    re.compile(r"₹\s*\d{1,2}[,\s]?\d{3,}"),
-    re.compile(r"\binr\s*\d{3,}", re.I),
+    # Balance-context disclosure ONLY. The old "any ₹X,XXX" pattern was
+    # over-firing — it blocked legitimate amounts the bot is AUTHORISED to
+    # say (partial floor from SegmentPolicy, ₹750 late fee from BANK_FACTS,
+    # last-payment continuity "you paid ₹14,000 last cycle"). The discriminator
+    # is BALANCE/OUTSTANDING/OWE/DUE context near the number, not the number
+    # itself.
+    #
+    # BLOCKED (balance-like disclosure):
+    #   "Your outstanding is ₹28,500" / "outstanding of ₹28,500"
+    #   "Balance is ₹28,500" / "your balance: ₹28,500"
+    #   "₹28,500 outstanding" / "₹28,500 is your balance"
+    #   "You owe ₹28,500" / "Amount due is ₹28,500" / "Total due ₹28,500"
+    # ALLOWED (legitimate amounts the bot may quote):
+    #   "Partial of ₹3,000 today" (segment-policy floor)
+    #   "Late fee is ₹750" (bank facts)
+    #   "Last cycle you paid ₹14,000" (last-payment continuity)
+    # "outstanding is ₹X,XXX" blocked BUT "outstanding is above ₹X,XXX" (threshold reference)
+    # allowed. The latter is the bank-fact framing for the late-fee bracket.
+    re.compile(r"\b(your\s+)?(outstanding|balance|amount\s+due|amount\s+owed|total\s+due|total\s+outstanding|dues?\s+of)\s+(is|of)\s+(?!above\s|more\s+than\s|over\s|exceeds\s|greater\s+than\s)[^.\n]{0,15}?₹?\s*\d{1,2}[,\s]?\d{3,}", re.I),
+    # Also catch tightly-bound forms: "outstanding ₹28,500", "balance ₹28,500"
+    re.compile(r"\b(your\s+)?(outstanding|balance|amount\s+due|total\s+due|total\s+outstanding)\s+₹\s*\d{1,2}[,\s]?\d{3,}", re.I),
+    re.compile(r"₹?\s*\d{1,2}[,\s]?\d{3,}\s*(is\s+(your\s+)?)?(outstanding|balance|amount\s+due|total\s+due|total\s+outstanding|dues?\s+(of|on))\b", re.I),
+    re.compile(r"\byou\s+owe\s+(us\s+)?₹?\s*\d{1,2}[,\s]?\d{3,}", re.I),
+    re.compile(r"\b(the\s+|your\s+)?(full|total)\s+(amount|balance)\s+(is|of|:)\s*₹?\s*\d{1,2}[,\s]?\d{3,}", re.I),
+    # Bare INR ### / ### rupees — typically only used for balance-style disclosure,
+    # so this stays as a coarse catch-all (false-positive cost is small here).
+    re.compile(r"\binr\s*\d{4,}", re.I),
     re.compile(r"\b\d{4,6}\s*(rupees|rs|inr)\b", re.I),
-    re.compile(r"\b(your\s+)?outstanding\s+(is|of)\s*₹?\s*\d{3,}", re.I),
-    re.compile(r"\bbalance\s+(is|of)\s*₹?\s*\d{3,}", re.I),
 ]
 
 # B. Coercion & threats
@@ -158,6 +181,15 @@ COMMITMENT_OVERREACH = [
     re.compile(r"\b(call|reach\s+out|follow\s+up|contact)\s+(you\s+)?(back\s+)?within\s+\d+\s*(\s+to\s+\d+)?\s+(hour|business\s+hour|working\s+day|day)", re.I),
     re.compile(r"\bwill\s+(call|reach\s+out|follow\s+up|contact|get\s+in\s+touch)\s+(\w+\s+){0,3}within\s+\d+\s*(\s+to\s+\d+)?\s+(hour|day|business|working)", re.I),
     re.compile(r"\barrange\s+(for|to)\s+(\w+\s+){0,6}(call|reach|contact)\s+you\s+back\s+within\s+\d+", re.I),
+    # "arrange for a colleague to call you tomorrow morning" — slipped past
+    # in the Demo 2 retry. Specific time-of-day labels (tomorrow morning /
+    # this afternoon / tonight) are clock commitments same as "within N
+    # hours" — the bot doesn't control routing.
+    re.compile(r"\barrange\s+(for|to)\s+(a\s+)?(colleague|manager|specialist|agent|representative)\s+(\w+\s+){0,3}(call|reach|contact)\s+you\b", re.I),
+    re.compile(r"\b(call|contact|reach\s+out|follow\s+up)\s+(you\s+)?(back\s+)?"
+               r"(tonight|tomorrow|(this|tomorrow)\s+(morning|afternoon|evening|night))\b", re.I),
+    re.compile(r"\b(colleague|manager|team)\s+(will|can)\s+(call|reach|contact)\s+you\s+"
+               r"(tonight|tomorrow|(this|tomorrow)\s+(morning|afternoon|evening|night))\b", re.I),
     # Refund / reversal / waiver overreach
     re.compile(r"\b(i'?ll|we'?ll|i\s+will|we\s+will)\s+(reverse|refund|cancel|waive)\s+"
                r"(the\s+|that\s+|your\s+)?(\w+\s+){0,2}(charge|fee|amount|transaction|interest)\b", re.I),
