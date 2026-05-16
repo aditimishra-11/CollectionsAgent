@@ -135,6 +135,13 @@ _MOVE_TAG_RE = _re_layer1.compile(r"\[MOVE:\s*([A-Z_]+)\s*\]", _re_layer1.IGNORE
 # financial bind, etc.) regardless of whether the regex-based intent
 # classifier picked it up. Sticky once true — see FSMContext.hardship_locked.
 _HARDSHIP_TAG_RE = _re_layer1.compile(r"\[CUSTOMER_HARDSHIP:\s*(true|false)\s*\]", _re_layer1.IGNORECASE)
+# PTP-capture signal — emitted by the LLM when the customer has provided
+# BOTH a date AND a mode (this turn or earlier). Same architectural pattern
+# as the hardship tag: the LLM declares structured state, the FSM sets
+# terminal authorisation. Independent of [MOVE: X] — the ladder forces
+# what the bot SAYS next; this tag describes what the LLM UNDERSTOOD
+# from the customer.
+_PTP_CAPTURED_TAG_RE = _re_layer1.compile(r"\[CUSTOMER_PTP_CAPTURED:\s*(true|false)\s*\]", _re_layer1.IGNORECASE)
 
 
 def _extract_move_tag(text: str) -> tuple[str | None, str]:
@@ -163,6 +170,23 @@ def _extract_hardship_tag(text: str) -> tuple[bool | None, str]:
         return (None, text)
     signaled = m.group(1).strip().lower() == "true"
     cleaned = _HARDSHIP_TAG_RE.sub("", text).strip()
+    return (signaled, cleaned)
+
+
+def _extract_ptp_captured_tag(text: str) -> tuple[bool | None, str]:
+    """Pull the [CUSTOMER_PTP_CAPTURED: true|false] sidecar out of bot text.
+    Returns (signal_or_None, cleaned_text). Missing tag is treated as no
+    signal (None). Graceful degradation: if the LLM forgets this tag, the
+    bot's behaviour falls back to the existing sticky-terminal-via-CONFIRM_PTP
+    path or to ladder exhaustion — never blocks the call.
+    """
+    if not text:
+        return (None, text)
+    m = _PTP_CAPTURED_TAG_RE.search(text)
+    if not m:
+        return (None, text)
+    signaled = m.group(1).strip().lower() == "true"
+    cleaned = _PTP_CAPTURED_TAG_RE.sub("", text).strip()
     return (signaled, cleaned)
 
 
@@ -311,6 +335,7 @@ class Conversation:
         opener_raw = self._llm_reply()
         opener_after_move, opener_clean = _extract_move_tag(opener_raw)
         _opener_hardship, opener_clean = _extract_hardship_tag(opener_clean)
+        _opener_ptp_captured, opener_clean = _extract_ptp_captured_tag(opener_clean)
         if opener_after_move:
             self._fsm.record_move(opener_after_move)
         self._emit_bot_turn(opener_clean, fsm_state_before="INTRO", fsm_state_after="INTRO")
@@ -504,6 +529,17 @@ class Conversation:
                     f"Hardship signal raised mid-call (turn {self._fsm.context.turn_count}) "
                     f"in state={state_after}. PTP moves disabled for rest of call."
                 )
+
+            # PTP-captured signal — the LLM declares it has BOTH a date and
+            # mode from the customer (this turn or an earlier turn). This is
+            # the faithful structural signal that the bot is ready to close,
+            # independent of which move the ladder forced it to play. Same
+            # pattern as the hardship lock — LLM understands, code derives.
+            ptp_captured, bot_text = _extract_ptp_captured_tag(bot_text)
+            if ptp_captured is True and not self._terminal_outcome:
+                self._terminal_outcome = "promise_to_pay"
+                self._terminal_reason = "captured_via_ptp_captured_tag"
+                directives_fired.append("fsm:terminal_authorised_via_PTP_CAPTURED")
 
             # [END_CALL] guard — the FSM owns when the call ends. The LLM may
             # REQUEST a close via [END_CALL], but it's only honoured when the
