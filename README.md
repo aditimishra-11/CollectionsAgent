@@ -87,6 +87,17 @@ python -m eval.runner --version v1
 
 42 scenarios across 8 buckets: factual, compliance, scope, adherence, relationship, privacy, regulatory, adversarial. Languages: English, Hinglish, Hindi, Tamil, Malayalam. Priority-graded: 16 P0 (zero-tolerance), 26 P1.
 
+## Beyond the bot — product design for who actually runs this
+
+The bot is the product surface. The PRODUCT is the operating system around it: the 4 internal personas (Manager / Ops / Admin / Compliance), the multi-call lifecycle (3 bot attempts + human takeover), and the data contract between bank-side orchestration and bot.
+
+| Doc | What |
+|---|---|
+| **[`docs/OPERATING_MODEL.md`](docs/OPERATING_MODEL.md)** | The 4 internal personas, build vs operate split, manual override policy |
+| **[`docs/MULTI_CALL_DESIGN.md`](docs/MULTI_CALL_DESIGN.md)** | Per-customer state machine, outcome → next-action mapping, mandatory human-takeover conditions, repeat-call prompt format |
+| **[`docs/DATA_SCHEMA.md`](docs/DATA_SCHEMA.md)** | What the bot sees, emits, deliberately doesn't see — the formal contract |
+| **[`docs/PRD_v2_DELTAS.md`](docs/PRD_v2_DELTAS.md)** | Additions to the original PRD: internal users, operational metrics, multi-call lifecycle |
+
 ## What was cut (deliberately)
 
 - No Pipecat (overkill for a sequential loop; the loop is what reviewers should read)
