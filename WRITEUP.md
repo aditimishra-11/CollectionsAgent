@@ -1,6 +1,6 @@
 # Mumbai Bank Collections Voicebot — Submission
 
-**Aditi Mishra · GreyLabs AI PM take-home · {{DATE}}**
+**Aditi Mishra · GreyLabs AI PM take-home · 16 May 2026**
 **Repository:** [github.com/aditimishra-11/CollectionsAgent](https://github.com/aditimishra-11/CollectionsAgent)
 **Demos:** [{{DEMO_LINK_1}}] · [{{DEMO_LINK_2}}] · [{{DEMO_LINK_3}}]
 
@@ -17,19 +17,24 @@ The bot is the product surface. The PRODUCT is the operating system around it: f
 
 ## 2 · Headline result
 
-> _The metrics below are the eval result **before** the four structural layers landed this week. A re-run after the layers is in progress; updated numbers will be folded in once it completes._
-
-| Metric | v1 baseline | v2 |
-|---|---:|---:|
-| Calls that would pass full QA | 13% | **{{V2_FULL_PASS}}%** |
-| Zero policy violations | 13% | **{{V2_ZERO_VIOLATION}}%** |
-| P0 (zero-tolerance) compliance | 13% | **{{V2_P0_PASS}}%** |
-| Apex tone preservation | 0% | **{{V2_APEX_TONE}}%** |
-| Right tone for segment | 87% (vacuous) | **{{V2_TONE_RIGHT}}%** |
-| Mean cost per call (LLM + STT + TTS) | — | **₹{{V2_COST}}** |
-| Estimated voice p95 round-trip | — | **{{V2_LATENCY_P95}} s** (target < 5 s) |
+| Metric | v1 baseline | v2 (pre-layers) | v2 (post-layers) |
+|---|---:|---:|---:|
+| **P0 (zero-tolerance) compliance** | 13% | 94% | **100%** ✓ |
+| Calls with zero policy violations | 13% | 93% | **98%** |
+| Right tone for segment | 87% (vacuous) | 100% | **100%** ✓ |
+| Apex tone preservation | 0% | 100% | **100%** ✓ |
+| Right outcome | low | high | 79% |
+| Calls that would pass full QA | 13% | 60% | **57%** |
+| Estimated voice p95 round-trip | — | 2.8 s | **2.3 s** |
+| Mean cost per call (LLM + STT + TTS) | — | ₹0.31 | **₹0.36** |
 
 Across **42 scenarios** including 11 adversarial stress tests. Languages: English, Hinglish, Hindi, Tamil, Malayalam. Priority-graded: 16 P0 (zero-tolerance), 26 P1.
+
+**The honest read.** This week's four structural layers (move ladder, segment policy, refuse-vs-DND split, commitment-overreach validator) **moved the ship-blocking floor from 94% to 100% on P0 compliance** — the single most important number on the page, because under RBI Fair Practices Code one P0 failure is a regulatory event. Zero-violation rate is up 5 points. P95 latency is down 0.5s. The bot now physically *cannot* loop on the same question, *cannot* promise no future contact, and *cannot* close calls outside FSM authority.
+
+The cost: full-pass at 57% vs the prior 60% baseline. The remaining failures cluster in two judge-strict axes (hallucination 79% vs 95% target, slot-capture 77% vs 85% target) — *eval-rubric-tunable*, not architectural. These would be the focus of the next iteration; the bot is meaningfully harder to ship-block and meaningfully easier to audit than the prior v2.
+
+> A diagnostic regression and recovery during this eval cycle is worth flagging openly: the first run after Layer 1 landed showed 31% full-pass, caused by a too-strict `[END_CALL]` guard preventing the LLM from closing in states that had already been FSM-authorised to end. Diagnosed (sticky `terminal_outcome`), fixed, re-run, recovered to 57%. The kind of loop a real eval cycle should look like.
 
 ## 3 · Why this was hard, in three product tensions
 

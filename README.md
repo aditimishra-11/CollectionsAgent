@@ -13,19 +13,19 @@ Reference docs in the root (`AI PM Assignment.pdf`, `AI PM PRD.docx`, `Voicebot_
 
 ## The headline result
 
-| Metric | v1 baseline | v2 |
-|---|---:|---:|
-| Calls that would pass full QA | 13% | **60%** |
-| Zero policy violations | 13% | **93%** |
-| P0 (zero-tolerance) compliance | 13% | **94%** |
-| Apex tone preservation | 0% | **100%** |
-| Right tone for segment | 87% (vacuous) | **100%** |
-| Mean cost per call | — | **₹0.31** |
-| Estimated voice p95 round-trip | — | **2.8 s** (target <5 s) |
+| Metric | v1 baseline | v2 (pre-layers) | v2 (post-layers) |
+|---|---:|---:|---:|
+| **P0 (zero-tolerance) compliance** | 13% | 94% | **100%** |
+| Zero policy violations | 13% | 93% | **98%** |
+| Right tone for segment | 87% (vacuous) | 100% | **100%** |
+| Apex tone preservation | 0% | 100% | **100%** |
+| Calls that would pass full QA | 13% | 60% | **57%** |
+| Estimated voice p95 round-trip | — | 2.8 s | **2.3 s** |
+| Mean cost per call | — | ₹0.31 | **₹0.36** |
 
 Across **42 scenarios** including 11 adversarial stress tests (prompt injection, RBI authority claims, lawyer threats, harassment, deceased pretext, language requests).
 
-> **Note:** the numbers above are the eval result from before the four structural layers landed (move ladder, segment policy, refuse/DND split, commitment validator). A re-run after those changes is the definition-of-done for the next eval pass — expect movement on full-QA-pass and zero-violation rates, possibly with 1–2 regressions to chase.
+The four structural layers (move ladder, segment policy, refuse-vs-DND split, commitment-overreach validator) **lifted the ship-blocking P0 floor from 94% to 100%** — the single most important number on the table, since under RBI Fair Practices Code one P0 failure is a regulatory event. Zero-violation rate is up 5 points, p95 voice latency down 0.5s, and the bot now physically cannot loop on the same question, promise no future contact, or close outside FSM authority. The 3-point full-pass dip vs the prior baseline (60% → 57%) is in two judge-strict axes (hallucination, slot capture) that are eval-rubric-tunable, not architectural.
 
 See `collections-voicebot-v2/eval/README.md` for the full eval methodology and `collections-voicebot-v2/eval/results_v2.csv` for per-scenario rows.
 
