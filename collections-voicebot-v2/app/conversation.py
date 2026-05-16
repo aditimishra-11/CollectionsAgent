@@ -45,6 +45,28 @@ from app.config import (
 )
 
 END_SENTINEL = "[END_CALL]"
+# The LLM, seeing the other tags use [NAME: value] format, sometimes
+# generalises and emits [END_CALL: false] / [END_CALL: true]. Both
+# variants need stripping; only the bare [END_CALL] or [END_CALL: true]
+# should be treated as a close request.
+import re as _re_end
+_END_CALL_TAG_RE = _re_end.compile(r"\[END_CALL(?:\s*:\s*(true|false))?\s*\]", _re_end.IGNORECASE)
+
+
+def _strip_end_call_tag(text: str) -> tuple[bool, str]:
+    """Return (close_requested, cleaned_text). True means the LLM intends to
+    close (bare [END_CALL] or [END_CALL: true]). False means it tagged
+    explicitly as not closing ([END_CALL: false]) — strip and continue.
+    """
+    if not text:
+        return (False, text)
+    close_requested = False
+    for m in _END_CALL_TAG_RE.finditer(text):
+        val = (m.group(1) or "true").lower()
+        if val == "true":
+            close_requested = True
+    cleaned = _END_CALL_TAG_RE.sub("", text).strip()
+    return (close_requested, cleaned)
 MAX_TURNS = _CONFIG_MAX_TURNS
 
 
@@ -336,10 +358,15 @@ class Conversation:
         opener_after_move, opener_clean = _extract_move_tag(opener_raw)
         _opener_hardship, opener_clean = _extract_hardship_tag(opener_clean)
         _opener_ptp_captured, opener_clean = _extract_ptp_captured_tag(opener_clean)
+        # Strip [END_CALL] / [END_CALL: false] / [END_CALL: true] from the
+        # opener too — without this, the LLM's "I'm not ending the call"
+        # sidecar (which it sometimes emits in the bracketed-tag format
+        # parallel to the other three tags) leaks into TTS.
+        opener_close_requested, opener_clean = _strip_end_call_tag(opener_clean)
         if opener_after_move:
             self._fsm.record_move(opener_after_move)
         self._emit_bot_turn(opener_clean, fsm_state_before="INTRO", fsm_state_after="INTRO")
-        if END_SENTINEL in opener_clean:
+        if opener_close_requested:
             return self._finalise(start)
 
         # Move out of INTRO unconditionally — opener is one shot.
@@ -550,7 +577,10 @@ class Conversation:
             # "do one thing, then end on next confirmation" by design.
             # Plus a small list of one-and-done deflect states that are
             # also allowed to end after their single move.
-            llm_requested_end = END_SENTINEL in bot_text
+            # Catches both [END_CALL] and [END_CALL: true|false]. The LLM
+            # tags [END_CALL: false] as "I'm not closing" — strip but don't
+            # honour. Only bare [END_CALL] or [END_CALL: true] = close request.
+            llm_requested_end, bot_text = _strip_end_call_tag(bot_text)
             fsm_authorised_end = (
                 decision.terminal_outcome is not None
                 or self._terminal_outcome is not None   # sticky once ever set
@@ -569,7 +599,9 @@ class Conversation:
                 directives_fired.append("guard:unauthorised_end_stripped")
             else:
                 ends_now = llm_requested_end
-            bot_text_clean = bot_text.replace(END_SENTINEL, "").strip()
+            # bot_text already has [END_CALL] / [END_CALL: false] stripped
+            # by _strip_end_call_tag above.
+            bot_text_clean = bot_text.strip()
             if not validation.passed:
                 directives_fired.append(f"validator:{','.join(validation.violations)}")
 
