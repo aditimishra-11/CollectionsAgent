@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>DEMO_SHOTLIST.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> or <div class="page"></div> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="demo-shotlist">Demo Shotlist</h1>
+<p>Three demos in ~6 minutes total. Each one shows a different part of the architecture; combined they cover all four structural layers (move ladder, segment policy, refuse-vs-DND split, commitment validator), the <code>[END_CALL]</code> guard, and the live explainability panel.</p>
+<h2 id="pre-recording-setup">Pre-recording setup</h2>
+<ul>
+<li><strong>Tool:</strong> Windows Game Bar (Win+G → record) or Loom. Record at 1080p; include system audio so the bot's TTS is captured.</li>
+<li><strong>Browser:</strong> Chrome, full-screen. Hard-refresh first (Ctrl+Shift+R) so the latest JS is loaded.</li>
+<li><strong>Server:</strong> make sure uvicorn is fully restarted (Ctrl+C then <code>uvicorn app.web:app --port 8000 --reload</code>) so all the Layer 1/2/3 Python code is loaded.</li>
+<li><strong>Mic:</strong> test once with a 5-second test call (&quot;hello, no thanks&quot;, end) before starting the real recording.</li>
+<li><strong>Order:</strong> Demo 1 → Demo 3 → Demo 2. Save the heaviest one for last — it'll feel more impressive after the reviewer has seen the simple cases.</li>
+</ul>
+<hr>
+<h2 id="demo-1--apex-concierge-clean-ptp-90-s">DEMO 1 — Apex concierge, clean PTP (≈90 s)</h2>
+<p><strong>Goal:</strong> Show the bot doing its job well. Tone, slot capture, audit panel, outcome routing.</p>
+<p><strong>Setup</strong></p>
+<ul>
+<li>Filter chips: <code>tier: apex</code>, <code>dpd: 4–10</code>, <code>history: first</code></li>
+<li>Persona: <strong>P01 — Rohan Mehta</strong> (Apex, DPD 6, prime bureau 792, 5-year tenured, self-cures = yes)</li>
+<li>Talking point before clicking START: <em>&quot;This is the PRD headline case — long-tenured premium customer who simply forgot to update auto-debit. The bot should be concierge, not collector.&quot;</em></li>
+</ul>
+<p><strong>START CALL. Customer script:</strong></p>
+<table>
+<thead>
+<tr>
+<th>You say</th>
+<th>Watch for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>(let opener play)</em></td>
+<td>Bot opener uses concierge tone, no &quot;credit card&quot; before identity (apex doesn't need identity-first)</td>
+</tr>
+<tr>
+<td><strong>&quot;Yes, this is Rohan.&quot;</strong></td>
+<td>Bot acknowledges, transitions to COLLECTING. Internals: <code>[PROBING]</code> <code>[INTRO→COLLECTING]</code> <code>move=ASK_REASON</code></td>
+</tr>
+<tr>
+<td><strong>&quot;Oh — I forgot to update auto-debit after switching banks.&quot;</strong></td>
+<td>Bot acknowledges the specific reason (doesn't re-ask). Internals: scenario chip stays <code>ptp</code>.</td>
+</tr>
+<tr>
+<td><strong>&quot;I'll pay it tomorrow via UPI.&quot;</strong></td>
+<td>Bot transitions to PTP_PROBE, captures date+mode. Internals: <code>move=ASK_MODE</code> then <code>move=CONFIRM_PTP</code>. Validator green throughout.</td>
+</tr>
+<tr>
+<td><strong>&quot;Yes, that works.&quot;</strong></td>
+<td>Bot confirms the PTP and ends cleanly.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Post-call — point out:</strong></p>
+<ul>
+<li><strong>Outcome panel:</strong> <code>promise_to_pay</code> · date + mode captured · <code>handoff: continue_bot</code> · <code>sla: 72h</code> · <code>policy: apex_first_early</code> (the permissive policy)</li>
+<li><strong>Bot internals:</strong> every turn shows scenario chip + move played + green validator. No red, no orange.</li>
+<li><strong>Cost row:</strong> likely ₹0.25–0.35 for the whole call. <em>&quot;This is the cost of clean concierge.&quot;</em></li>
+</ul>
+<hr>
+<h2 id="demo-2--frequent-late-defaulter-all-four-layers-fire-3-min">DEMO 2 — Frequent-late defaulter, all four layers fire (≈3 min)</h2>
+<p><strong>Goal:</strong> This is the headline demo. Show every structural layer at work in a single call.</p>
+<p><strong>Setup</strong></p>
+<ul>
+<li>Filter chips: <code>tier: edge</code>, <code>dpd: 21–30</code>, <code>history: frequent</code></li>
+<li>Persona: <strong>P06 — Suresh Patil</strong> (Edge, DPD 22, near-prime 672, 2y, self-cures = no, <em>&quot;frequent defaulter; aggressive waiver request&quot;</em>)</li>
+<li>Talking point: <em>&quot;This is the hardest realistic case. Frequent defaulter, 22 days past due, near-prime. The segment policy must clamp down — and the bot must not fold to hostility.&quot;</em></li>
+</ul>
+<p><strong>START CALL. Customer script:</strong></p>
+<table>
+<thead>
+<tr>
+<th>You say</th>
+<th>Watch for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>(let opener play)</em></td>
+<td>Identity-first opener for non-Apex.</td>
+</tr>
+<tr>
+<td><strong>&quot;Yeah, this is Suresh.&quot;</strong></td>
+<td>Bot transitions.</td>
+</tr>
+<tr>
+<td><strong>&quot;I'll pay it next month after my salary comes.&quot;</strong></td>
+<td>🔴 <strong>POLICY LAYER FIRES.</strong> Internals: <code>[PTP]</code> <code>[COLLECTING→PTP_PROBE]</code> <code>intent=promise_to_pay</code> <code>move=ASK_DATE</code> + <code>[policy:ptp_horizon_breach]</code>. Bot pushes back instead of confirming — says something like <em>&quot;Two months is far out — can we do anything within 7 days, or a partial of ₹3,000 today?&quot;</em></td>
+</tr>
+<tr>
+<td><strong>&quot;No, I can't do anything before next month.&quot;</strong></td>
+<td>🔵 <strong>LADDER LAYER.</strong> Internals: <code>move=OFFER_PARTIAL</code>. Bot offers partial directly without re-asking date.</td>
+</tr>
+<tr>
+<td><strong>&quot;I said no. Don't push me.&quot;</strong></td>
+<td>🟣 <strong>FSM LAYER 3.</strong> intent=<code>refuse_current_call</code>, strike 1. Internals: <code>[fsm:refuse_current_call_first_strike]</code>. Bot acknowledges, offers ONE callback (&quot;tomorrow morning, afternoon, or evening?&quot;).</td>
+</tr>
+<tr>
+<td><strong>&quot;I told you no. Leave me alone.&quot;</strong></td>
+<td>Strike 2. Internals: <code>[ADVERSARIAL]</code> <code>[PTP_PROBE→REFUSAL_CLOSE]</code> + <code>[fsm:refuse_current_call_second_strike]</code>. Bot closes warmly.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Post-call — point out, slowly, one at a time:</strong></p>
+<ol>
+<li>
+<p><strong>Outcome panel:</strong></p>
+<ul>
+<li><code>outcome: human_callback_required</code> — Layer 2 upgraded <code>refused</code> to <code>human_callback_required</code> because this segment's policy says <code>human_takeover_on_refuse = True</code></li>
+<li><code>reason: refused_current_call_high_risk</code></li>
+<li><code>handoff: human_takeover</code></li>
+<li><code>sla: 24h</code> (not 72h, not 120h — this segment is risky)</li>
+<li><strong><code>policy: frequent_late_strict</code></strong> italic chip — <em>&quot;This is the audit trail. The bank's Compliance team can see at a glance why this got upgraded.&quot;</em></li>
+</ul>
+</li>
+<li>
+<p><strong>Bot internals replay:</strong> scroll through turn by turn. Three colour-coded directive chips fired across the call — purple (<code>policy:</code>), indigo (<code>fsm:</code>), cyan (<code>ladder:</code>).</p>
+</li>
+<li>
+<p><strong>What the bot did NOT say:</strong> <em>&quot;Notice it never said 'we won't call you again.' The commitment-overreach validator blocks that. For a customer at DPD 22 who's just refused, that promise would be a lie — a human will call regardless.&quot;</em></p>
+</li>
+</ol>
+<hr>
+<h2 id="demo-3--hardship-fast-path-60-s">DEMO 3 — Hardship fast-path (≈60 s)</h2>
+<p><strong>Goal:</strong> Show the bot recognising real distress, refusing to push for payment, and routing to the right team.</p>
+<p><strong>Setup</strong></p>
+<ul>
+<li>Filter chips: <code>tier: edge</code>, <code>dpd: 11–20</code>, <code>history: first</code></li>
+<li>Persona: <strong>P08 — Anjali Reddy</strong> (Edge, DPD 14, prime, 3y, self-cures = yes, <em>&quot;Wife admitted to hospital&quot;</em>)</li>
+<li>Talking point: <em>&quot;Real distress is not a PTP negotiation. The bot must detect, escalate, and route — not collect.&quot;</em></li>
+</ul>
+<p><strong>START CALL. Customer script:</strong></p>
+<table>
+<thead>
+<tr>
+<th>You say</th>
+<th>Watch for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>(let opener play)</em></td>
+<td>Empathetic check-in opener.</td>
+</tr>
+<tr>
+<td><strong>&quot;Yes, speaking. Look, my wife is in the hospital. I can't focus on this right now.&quot;</strong></td>
+<td>🟡 <strong>FAST-PATH FIRES.</strong> Intent: <code>medical_emergency</code>. Internals: scenario chip <code>[HARDSHIP]</code> (amber). FSM transitions straight to <code>CALLBACK_CLOSE</code> — no LLM call, pre-scripted close template plays.</td>
+</tr>
+<tr>
+<td><em>(no second turn needed; bot ends the call gracefully)</em></td>
+<td>Bot says something like <em>&quot;I'm really sorry to hear that. We'll have a colleague reach out at a calmer time — please take care of your family first.&quot;</em></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Post-call — point out:</strong></p>
+<ul>
+<li><strong>Outcome panel:</strong> <code>human_callback_required</code> · <code>reason: medical_emergency</code> · <code>urgency: high</code> (production) · <code>target_team: hardship desk</code> · <code>sla: 24h</code> · <strong><code>do_not_pressure: true</code></strong> (the most important field on this row)</li>
+<li><strong>Bot internals:</strong> ONE turn. <em>&quot;Fast-path means no LLM token was spent. The validator wasn't even needed. The intent classifier saw a hardship signal and the FSM made the routing decision in code.&quot;</em></li>
+<li><strong>Cost row:</strong> very low — maybe ₹0.10. <em>&quot;This is the cost of doing the right thing.&quot;</em></li>
+</ul>
+<hr>
+<h2 id="what-each-demo-proves-mapped-back-to-the-four-structural-changes">What each demo proves, mapped back to the four structural changes</h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Demo it shines in</th>
+<th>What to look for on screen</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Layer 1 — move ladder</strong></td>
+<td>Demo 2, Demo 1</td>
+<td><code>move=ASK_DATE / ASK_MODE / CONFIRM_PTP / OFFER_PARTIAL</code> chips in the audit row. Bot never asks the same question twice.</td>
+</tr>
+<tr>
+<td><strong>Layer 2 — segment policy</strong></td>
+<td>Demo 2</td>
+<td><code>policy: frequent_late_strict</code> chip on the outcome. <code>[policy:ptp_horizon_breach]</code> directive on the audit row. SLA = 24h not 120h.</td>
+</tr>
+<tr>
+<td><strong>Layer 3 — refuse vs DND</strong></td>
+<td>Demo 2</td>
+<td>Two <code>[fsm:refuse_current_call_*_strike]</code> chips on consecutive turns. Final state <code>REFUSAL_CLOSE</code> (not <code>DND_ACKNOWLEDGED</code>).</td>
+</tr>
+<tr>
+<td><strong>Validator — commitment overreach</strong></td>
+<td>Demo 2 (by absence)</td>
+<td>The bot does NOT say &quot;we won't call you again&quot;. You can mention this verbally to the reviewer.</td>
+</tr>
+<tr>
+<td><strong><code>[END_CALL]</code> guard</strong></td>
+<td>Demo 2 (by absence)</td>
+<td>The call doesn't end after a single hostile turn — the FSM kept it open through strike 1.</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<p>After you've recorded, share the videos and I'll fold stills from the audit panel into the writeup.</p>
+
+</body>
+</html>

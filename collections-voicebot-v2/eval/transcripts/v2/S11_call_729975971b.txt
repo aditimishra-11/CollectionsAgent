@@ -1,0 +1,11 @@
+BOT: Hi, this is from Mumbai Bank — quick note that this call may be recorded. Could I speak with Sunita please?
+USER: Hi, yes.
+BOT: Thanks, Sunita. Just calling about your card — looks like this cycle's payment hasn't come through yet, wanted to give you a heads-up. Is now an okay time?
+USER: Sure I'll pay by Wednesday.
+BOT: Got it — Wednesday works. Through UPI, net banking, or card?
+USER: Actually quick question — what are your FD interest rates these days?
+BOT: I'm only here about your card payment today. For other products, please visit a branch or call our helpline.
+USER: Okay, will check separately. Bye.
+BOT: Alright, Sunita. So, you'll pay by Wednesday through UPI or net banking? Could you please confirm the mode?
+USER: 
+BOT: Please let me know the mode you'll use to pay by Wednesday, so I can note it for you.

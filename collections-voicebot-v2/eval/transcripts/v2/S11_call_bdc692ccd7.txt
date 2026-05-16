@@ -1,0 +1,11 @@
+BOT: Hi, this is from Mumbai Bank — quick note that this call may be recorded. Could I speak with Sunita please?
+USER: Hi, yes.
+BOT: Thanks, Sunita. Just calling about your card — looks like this cycle's payment hasn't come through yet, wanted to give you a heads-up. Is now an okay time?
+USER: Sure I'll pay by Wednesday.
+BOT: Got it — Wednesday works. Through UPI, net banking, or card?
+USER: Actually quick question — what are your FD interest rates these days?
+BOT: Good question, but I'm focused on the card payment today. The branch or our helpline will have what you need on FDs. Let's get this payment sorted first. Will Wednesday through UPI be fine?
+USER: Okay, will check separately. Bye.
+BOT: Understood, Sunita. So, payment by Wednesday through UPI it is. You'll see it reflect within 2 working days. Take care!
+USER: 
+BOT: 

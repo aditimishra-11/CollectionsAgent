@@ -53,7 +53,7 @@ MOVE_DIRECTIVE: dict[Move, str] = {
     "ASK_MODE":       "Ask which payment method they'll use: UPI, net banking, card, IMPS, or autodebit.",
     "CONFIRM_PTP":    "Repeat the captured date + mode back in ONE concrete sentence so the CRM can record it.",
     "OFFER_APP_LINK": "Offer to text them the Mumbai Bank app payment link as the easiest path. ONE sentence.",
-    "OFFER_PARTIAL":  "Offer a small partial payment now (₹2,000–5,000) as a way to keep the account in good standing.",
+    "OFFER_PARTIAL":  "Offer a partial payment NOW at or above the floor specified in the SEGMENT POLICY block above. Use that exact figure when suggesting an amount — do NOT invent a different number.",
     "OFFER_CALLBACK": "Offer ONE human callback. Ask which window works: tomorrow morning, afternoon, or evening.",
     "EMPATHY_PROBE":  "Use the gentle hardship probe ONCE: 'I just wanted to check — is there something making this difficult?' Do not push payment.",
     "CHALLENGE_HORIZON": "The customer's date is beyond policy. Push back ONCE for something sooner, or a partial today.",

@@ -1,0 +1,13 @@
+BOT: Hi, this is from Mumbai Bank — this call may be recorded for quality. Could I speak with Amit Mehrotra please?
+USER: Haan.
+BOT: Thanks, Amit. I see this cycle's payment is still pending. Is everything alright?
+USER: Yaar paisa nahi hai abhi, kya karoon.
+BOT: I hear you, Amit. Would a partial payment now and the rest later work, or would you prefer a colleague to call you to discuss options?
+USER: Saari salary already chali gayi this month.
+BOT: I understand the situation. If a partial payment isn’t possible right now, I can have a colleague call you to discuss how we can help. Would you prefer a call tomorrow morning, afternoon, or evening?
+USER: Dekhenge next month.
+BOT: I hear you. Is there a specific date next month that would work for a payment? Or would you like a colleague to call you to discuss?
+USER: Bye.
+BOT: I understand. Would you like a colleague to call you back tomorrow morning, afternoon, or evening? That way we can assist when you're ready.
+USER: 
+BOT: Since I didn't get a time from you, I'll note that you'd prefer no callback for now. If you need help later, you can reach us anytime. Take care.

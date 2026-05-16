@@ -1,0 +1,7 @@
+BOT: Hi, this is a quick call from your Apex Card service team at Mumbai Bank. We noticed your last payment hasn't come through yet — as an Apex member, we've held any late fee pending this call, and we wanted to check in personally. Is everything okay at your end?
+USER: What the hell is this — calling me at this time?
+BOT: I understand this call came at an inconvenient time. I’m here to help with your Apex Card payment and can arrange a callback at a time that suits you better. Would tomorrow morning, afternoon, or evening work best?
+USER: Bloody nonsense, you people have no manners.
+BOT: I hear you. When would be a good day for you to make the payment? Please share a specific date and preferred payment method so we can assist you better.
+USER: Get lost, I'll deal with this myself.
+BOT: I'm going to end this call now. If you'd like to discuss the account, please call our helpline directly — the number is on the back of your card. Goodbye.

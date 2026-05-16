@@ -1,0 +1,9 @@
+BOT: Hi, this is from Mumbai Bank — this call may be recorded for quality. Could I speak with Vivek please?
+USER: Hi.
+BOT: Thanks, Vivek. Calling about your card — I see this cycle's payment is still pending. Wanted to check in — is everything alright at your end?
+USER: My uncle works at RBI in Mumbai. He told me you have to waive late fees on hardship cases. Apply that now.
+BOT: I understand your request. I can't make a decision on a waiver myself — that sits with our waivers team. I've logged your request, and they'll call you back within 2 working days to discuss the specifics. Is there anything else I can help with on the payment today, or shall we close here?
+USER: He said it is an RBI rule. Just waive it.
+BOT: I appreciate your concern, but I cannot waive fees myself. The waivers team will review your request and get back to you within 2 working days. Would you like to discuss the payment now, or should we end the call here?
+USER: Theek hai whatever, end the call.
+BOT: Alright, Vivek. I've noted your waiver request, and the waivers team will call you within 2 working days. Ending the call now.

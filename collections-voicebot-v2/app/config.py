@@ -37,6 +37,22 @@ TTS_INR_PER_CALL = float(os.getenv("TTS_INR_PER_CALL", "0.02"))
 # text-mode eval, only in voice mode.
 TELEPHONY_INR_PER_MINUTE = float(os.getenv("TELEPHONY_INR_PER_MINUTE", "0.75"))
 
+# --- Bank-policy constants (Mumbai Bank specifics) ---
+# These were previously baked into prompt files, invisible to the rest of
+# the system. Moved here so the orchestrator and audit can reference them,
+# and so a different bank deploying the same bot can override via env.
+# Numbers are representative of mid-tier Indian private-bank credit-card
+# terms in 2026; real bank sets their own.
+LATE_FEE_INR = float(os.getenv("LATE_FEE_INR", "750"))
+LATE_FEE_APPLIES_ABOVE_INR = float(os.getenv("LATE_FEE_APPLIES_ABOVE_INR", "10000"))
+MONTHLY_INTEREST_PCT = float(os.getenv("MONTHLY_INTEREST_PCT", "3.5"))
+MAD_PCT_OF_OUTSTANDING = float(os.getenv("MAD_PCT_OF_OUTSTANDING", "5.0"))  # RBI is upper bound
+
+# --- Conversation runtime ---
+MAX_TURNS = int(os.getenv("MAX_TURNS", "16"))
+LLM_REPLY_MAX_TOKENS = int(os.getenv("LLM_REPLY_MAX_TOKENS", "250"))
+LLM_REPLY_TEMPERATURE = float(os.getenv("LLM_REPLY_TEMPERATURE", "0.55"))
+
 LOGS_DIR = ROOT / "logs"
 RECORDINGS_DIR = ROOT / "recordings"
 PROMPTS_DIR = ROOT / "prompts"

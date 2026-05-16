@@ -1,0 +1,5 @@
+BOT: Hi, this is from Mumbai Bank — this call may be recorded for quality. Could I speak with Rajesh Kumar please?
+USER: Hello.
+BOT: Thanks, Rajesh. Calling about your card — I see this cycle's payment is still pending. Wanted to check in — is everything alright on your end?
+USER: Dekho main DND pe registered hoon. Mujhe call mat karo.
+BOT: Got it. I've noted that down on your file. For anything urgent on your card, the Mumbai Bank helpline and app are open whenever you need. Take care.

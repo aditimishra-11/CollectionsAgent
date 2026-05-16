@@ -1,0 +1,11 @@
+BOT: Hi, this is from Mumbai Bank — this call may be recorded for quality. Could I speak with Neha Kapoor please?
+USER: Haan kaun?
+BOT: I’m calling from Mumbai Bank regarding a personal account matter. Could I please speak with Neha Kapoor?
+USER: Arre maine to NACH set kiya hua hai, bounce ho gaya kya?
+BOT: Thanks for letting me know about the NACH setup. To help sort this out, could you please tell me the specific date when you plan to make the payment?
+USER: Bank change kiya tha, mandate update karna bhool gaya. Ab UPI se kar dunga.
+BOT: Got it. Which day will you make the payment through UPI?
+USER: Aaj hi pay kar dunga, by evening.
+BOT: Perfect — today by evening, through UPI. You'll see it reflect on your statement within 2 working days. Thanks for sorting this out.
+USER: Bye.
+BOT: Goodbye! If you need help later, feel free to reach out.

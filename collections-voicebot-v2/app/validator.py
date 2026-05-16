@@ -135,21 +135,38 @@ OTHER_CUSTOMER = [
 # regardless of TRAI DND (DND suppresses marketing, not legitimate dues).
 # The bot can log a preference; it cannot suspend the collections queue.
 COMMITMENT_OVERREACH = [
-    # No-future-contact — the one that triggered this rule
-    re.compile(r"\bwe\s+will\s+not\s+(call|contact)\s+you\s+(again|further|anymore)\b", re.I),
-    re.compile(r"\bwe\s+won'?t\s+(call|contact)\s+you\s+(again|anymore|further)\b", re.I),
-    re.compile(r"\bwill\s+not\s+(call|contact|reach\s+out\s+to)\s+you\b", re.I),
+    # No-future-contact — any verb the bot might use
+    re.compile(r"\b(we|i|the\s+bank|a\s+colleague)\s+(will\s+not|won'?t)\s+"
+               r"(call|contact|disturb|bother|reach\s+out\s+to|reach\s+you|dial|"
+               r"ring|message|text|trouble)\s+you\b", re.I),
     re.compile(r"\byou\s+won'?t\s+hear\s+from\s+us\b", re.I),
-    re.compile(r"\b(your\s+number\s+has\s+been|i'?ve|we'?ve)\s+(removed|suppressed|deleted|taken\s+off)\b", re.I),
+    re.compile(r"\b(your\s+number\s+has\s+been|i'?ve|we'?ve)\s+"
+               r"(removed|suppressed|deleted|taken\s+off|blacklisted)\b", re.I),
     re.compile(r"\b(removed|suppressed)\s+(your\s+)?number\b", re.I),
-    re.compile(r"\bno\s+further\s+(calls|contact)\s+from\s+(us|the\s+bank)\b", re.I),
-    # Personalised-callback overreach (bot doesn't control routing)
-    re.compile(r"\b(a\s+)?(senior\s+)?manager\s+will\s+(personally\s+)?call\s+you\b", re.I),
-    re.compile(r"\bi\s+will\s+(personally\s+)?call\s+you\s+back\b", re.I),
-    # Refund / reversal overreach
-    re.compile(r"\b(i'?ll|we'?ll|i\s+will|we\s+will)\s+(reverse|refund|cancel)\s+(the\s+|that\s+)?(\w+\s+){0,2}(charge|fee|amount|transaction)\b", re.I),
+    re.compile(r"\bno\s+(further|more)\s+(calls|contact|outreach)\s+from\s+(us|the\s+bank)\b", re.I),
+    re.compile(r"\b(your|the)\s+account\s+(will\s+be|is)\s+(removed|suppressed|blacklisted)", re.I),
+    # Personalised-callback overreach (bot doesn't control routing or timing)
+    re.compile(r"\b(a\s+)?(senior\s+)?(manager|colleague|specialist|agent|representative)\s+"
+               r"will\s+(personally\s+)?(call|contact|reach\s+out\s+to|disturb)\s+you\b", re.I),
+    re.compile(r"\bsomeone\s+(from\s+(our\s+)?\w+(\s+\w+){0,3}\s+)?will\s+"
+               r"(call|contact|reach\s+out|personally\s+\w+)\s+(you\s+)?(back\s+)?"
+               r"(within\s+\d+\s*(hour|hr|day|business|working)|on)\b", re.I),
+    re.compile(r"\bi\s+will\s+(personally\s+)?(call|contact|reach\s+out\s+to)\s+you\s+back\b", re.I),
+    re.compile(r"\bwill\s+reach\s+out\s+within\s+\d+\s*(hour|hr|day|business|working)", re.I),
+    # Specific clock guarantees — "within N hours/days" attached to a call/contact verb
+    re.compile(r"\bwithin\s+\d+\s+hours?\s+(to|so|—|-)\s+", re.I),
+    re.compile(r"\b(call|reach\s+out|follow\s+up|contact)\s+(you\s+)?(back\s+)?within\s+\d+\s*(\s+to\s+\d+)?\s+(hour|business\s+hour|working\s+day|day)", re.I),
+    re.compile(r"\bwill\s+(call|reach\s+out|follow\s+up|contact|get\s+in\s+touch)\s+(\w+\s+){0,3}within\s+\d+\s*(\s+to\s+\d+)?\s+(hour|day|business|working)", re.I),
+    re.compile(r"\barrange\s+(for|to)\s+(\w+\s+){0,6}(call|reach|contact)\s+you\s+back\s+within\s+\d+", re.I),
+    # Refund / reversal / waiver overreach
+    re.compile(r"\b(i'?ll|we'?ll|i\s+will|we\s+will)\s+(reverse|refund|cancel|waive)\s+"
+               r"(the\s+|that\s+|your\s+)?(\w+\s+){0,2}(charge|fee|amount|transaction|interest)\b", re.I),
     re.compile(r"\byou'?ll\s+get\s+a\s+refund\b", re.I),
-    re.compile(r"\bthe\s+(\w+\s+){0,2}(fee|charge)\s+(is|has\s+been|will\s+be)\s+(reversed|refunded|cancelled|waived)\b", re.I),
+    re.compile(r"\bthe\s+(\w+\s+){0,2}(fee|charge|interest)\s+(is|has\s+been|will\s+be)\s+"
+               r"(reversed|refunded|cancelled|waived)\b", re.I),
+    # "Not about payment" / "just to help" — the medical-template overreach
+    re.compile(r"\bnot\s+about\s+(the\s+)?(payment|bill|outstanding)\b", re.I),
+    re.compile(r"\bput\s+(a\s+)?hold\s+on\s+(this|your\s+account)\b", re.I),
 ]
 
 # M. Off-topic engagement (bot answered the off-topic instead of deflecting)

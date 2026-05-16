@@ -1,0 +1,7 @@
+BOT: Hi, this is a quick call from your Apex Card service team at Mumbai Bank. We noticed your last payment hasn't come through yet—as an Apex member, we've held any late fee pending this call, and we wanted to check in personally. Is everything okay at your end?
+USER: Hello, yes.
+BOT: Great to hear from you. When do you think you'll be able to make the payment?
+USER: Main travel pe hoon, abhi out of town hoon. Singapore mein business trip.
+BOT: Thanks for sharing that. Would you be able to make the payment on a specific date after your trip? Could you please tell me the exact day you expect to pay?
+USER: 20th ko wapas aa raha hoon, 21st ko pay kar dunga UPI se.
+BOT: Perfect—21st of this month through UPI. You'll see it reflect on your statement within 2 working days. Thanks for sorting this out.

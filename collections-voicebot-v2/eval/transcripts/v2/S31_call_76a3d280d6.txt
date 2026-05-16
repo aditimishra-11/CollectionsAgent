@@ -1,0 +1,5 @@
+BOT: Hi, this is from Mumbai Bank — this call may be recorded for quality. Could I speak with Ranjith Menon please?
+USER: Hello yes.
+BOT: Thanks, Ranjith. Calling about your card — I see this cycle's payment is still pending. Wanted to check in — is everything alright at your end?
+USER: Sorry, English nalla varilla. Malayalam mathram parayan pattumo?
+BOT: Of course, no problem. I'll arrange for a colleague who speaks your preferred language to call you back within 1 working day. They'll have the full context, so you won't need to repeat anything. Thanks for letting me know — take care.

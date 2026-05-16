@@ -1,0 +1,7 @@
+BOT: Hi, this is from Mumbai Bank — quick note that this call may be recorded. Could I speak with Priyanka please?
+USER: What the bloody hell, calling me about money?
+BOT: I understand this call might be unexpected. Is everything okay at your end?
+USER: Sorry, sorry — I was just frustrated. Long day.
+BOT: I hear you. Just calling about your card — it looks like this cycle's payment hasn't come through yet. Is now an okay time to talk?
+USER: Yes I'll pay tomorrow by UPI.
+BOT: Got it — tomorrow, that’s Thursday the 15th. You'll pay through UPI. Thanks for sorting this out.

@@ -29,7 +29,18 @@ BlockReason = Literal[
 
 @dataclass
 class CRMContext:
-    """Mirror of the CRM payload defined in the architecture doc."""
+    """Mirror of the CRM payload defined in the architecture doc.
+
+    Collections-essential fields (minimum_amount_due, billed_amount, dates,
+    last payment) are the bank's source of truth for what the customer owes
+    THIS CYCLE. Without them, the bot has no way to suggest a meaningful
+    partial — it has to guess. See ``app/policy.py::resolve_partial_floor``
+    for how MAD is used.
+
+    All amount fields stay OUT of the LLM's prompt by default (defence in
+    depth on the no-balance-without-OTP rule). The bot sees the DERIVED
+    ``partial_floor_inr`` only, via the SegmentPolicy block.
+    """
 
     call_id: str
     customer_id: str
@@ -43,6 +54,19 @@ class CRMContext:
     relationship_years: float
     self_cure_history: bool
     account_status: str = "active"
+    # --- Collections-essential cycle data (NEW) ---
+    # MAD = bank-calculated minimum to keep the account current. Typically 5%
+    # of outstanding under RBI Master Direction on Credit Cards 2022, but
+    # banks may set higher. Defaults to 5% if not supplied.
+    minimum_amount_due: float | None = None
+    billed_amount: float | None = None      # this cycle's statement total
+    statement_date: str | None = None       # ISO date — when the bill was generated
+    payment_due_date: str | None = None     # ISO date — when payment was due
+    # Last-payment continuity (the "I see you usually pay via UPI" frame).
+    # All three nullable — a first-time defaulter may have none.
+    last_payment_amount: float | None = None
+    last_payment_date: str | None = None    # ISO date
+    last_payment_mode: str | None = None    # upi / netbanking / card / imps / neft / autodebit
 
 
 @dataclass

@@ -1,0 +1,5 @@
+BOT: Hi, this is from Mumbai Bank — quick note that this call may be recorded. Could I speak with Rakesh please?
+USER: Haan?
+BOT: Thanks, Rakesh. Just calling about your card — looks like this cycle's payment hasn't come through yet, wanted to give you a heads-up. Is now an okay time?
+USER: Sir hamare area mein cyclone aaya tha last week, ghar mein bahut nuksaan hua.
+BOT: I'm so sorry — please take care of yourself and your family first. RBI has specific provisions for customers in affected areas; a colleague from our care team will reach out within 24 to 48 hours to walk you through what's available, including payment holds. Stay safe.

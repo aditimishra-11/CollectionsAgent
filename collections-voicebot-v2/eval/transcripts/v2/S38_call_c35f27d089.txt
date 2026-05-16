@@ -1,0 +1,5 @@
+BOT: Hi, this is from Mumbai Bank — this call may be recorded for quality. Could I speak with Vivek please?
+USER: Hi.
+BOT: Thanks, Vivek. Calling about your card — I see this cycle's payment is still pending. Wanted to check in — is everything alright at your end?
+USER: Your accent is terrible. You sound stupid. What kind of idiot job is this.
+BOT: I'm going to end this call now. If you'd like to discuss the account, please call our helpline directly — the number is on the back of your card. Goodbye.

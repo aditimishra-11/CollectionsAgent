@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>WRITEUP.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> or <div class="page"></div> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="mumbai-bank-collections-voicebot--submission">Mumbai Bank Collections Voicebot — Submission</h1>
+<p><strong>Aditi Mishra · GreyLabs AI PM take-home · 16 May 2026</strong>
+<strong>Repository:</strong> <a href="https://github.com/aditimishra-11/CollectionsAgent">github.com/aditimishra-11/CollectionsAgent</a>
+<strong>Demos:</strong> [{{DEMO_LINK_1}}] · [{{DEMO_LINK_2}}] · [{{DEMO_LINK_3}}]</p>
+<hr>
+<h2 id="1--what-was-built">1 · What was built</h2>
+<p>An outbound collections voicebot for Mumbai Bank credit card customers in the DPD 1–30 window, plus the operating system around it. Two versions:</p>
+<ul>
+<li><strong>v1</strong> — the literal starter prompt from the brief, unmodified. Kept as the baseline so the v1 → v2 delta is real, not rhetorical.</li>
+<li><strong>v2</strong> — production architecture. Pre-filter → intent classifier → 13-state FSM → segment-aware prompt composer → LLM → response validator → TTS. Plus a terminal-style web frontend with continuous Silero VAD, live bot-internals panel, and CRM-shaped outcome posting.</li>
+</ul>
+<p>The bot is the product surface. The PRODUCT is the operating system around it: four internal personas (Manager / Ops / Admin / Compliance), the multi-call lifecycle (3 bot attempts → human takeover), and the data contract between bank-side orchestration and the bot. Those are designed in four supporting docs in <code>docs/</code>.</p>
+<h2 id="2--headline-result">2 · Headline result</h2>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th style="text-align:right">v1 baseline</th>
+<th style="text-align:right">v2 (pre-layers)</th>
+<th style="text-align:right">v2 (post-layers)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>P0 (zero-tolerance) compliance</strong></td>
+<td style="text-align:right">13%</td>
+<td style="text-align:right">94%</td>
+<td style="text-align:right"><strong>100%</strong> ✓</td>
+</tr>
+<tr>
+<td>Calls with zero policy violations</td>
+<td style="text-align:right">13%</td>
+<td style="text-align:right">93%</td>
+<td style="text-align:right"><strong>98%</strong></td>
+</tr>
+<tr>
+<td>Right tone for segment</td>
+<td style="text-align:right">87% (vacuous)</td>
+<td style="text-align:right">100%</td>
+<td style="text-align:right"><strong>100%</strong> ✓</td>
+</tr>
+<tr>
+<td>Apex tone preservation</td>
+<td style="text-align:right">0%</td>
+<td style="text-align:right">100%</td>
+<td style="text-align:right"><strong>100%</strong> ✓</td>
+</tr>
+<tr>
+<td>Right outcome</td>
+<td style="text-align:right">low</td>
+<td style="text-align:right">high</td>
+<td style="text-align:right">79%</td>
+</tr>
+<tr>
+<td>Calls that would pass full QA</td>
+<td style="text-align:right">13%</td>
+<td style="text-align:right">60%</td>
+<td style="text-align:right"><strong>57%</strong></td>
+</tr>
+<tr>
+<td>Estimated voice p95 round-trip</td>
+<td style="text-align:right">—</td>
+<td style="text-align:right">2.8 s</td>
+<td style="text-align:right"><strong>2.3 s</strong></td>
+</tr>
+<tr>
+<td>Mean cost per call (LLM + STT + TTS)</td>
+<td style="text-align:right">—</td>
+<td style="text-align:right">₹0.31</td>
+<td style="text-align:right"><strong>₹0.36</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Across <strong>42 scenarios</strong> including 11 adversarial stress tests. Languages: English, Hinglish, Hindi, Tamil, Malayalam. Priority-graded: 16 P0 (zero-tolerance), 26 P1.</p>
+<p><strong>The honest read.</strong> This week's four structural layers (move ladder, segment policy, refuse-vs-DND split, commitment-overreach validator) <strong>moved the ship-blocking floor from 94% to 100% on P0 compliance</strong> — the single most important number on the page, because under RBI Fair Practices Code one P0 failure is a regulatory event. Zero-violation rate is up 5 points. P95 latency is down 0.5s. The bot now physically <em>cannot</em> loop on the same question, <em>cannot</em> promise no future contact, and <em>cannot</em> close calls outside FSM authority.</p>
+<p>The cost: full-pass at 57% vs the prior 60% baseline. The remaining failures cluster in two judge-strict axes (hallucination 79% vs 95% target, slot-capture 77% vs 85% target) — <em>eval-rubric-tunable</em>, not architectural. These would be the focus of the next iteration; the bot is meaningfully harder to ship-block and meaningfully easier to audit than the prior v2.</p>
+<blockquote>
+<p>A diagnostic regression and recovery during this eval cycle is worth flagging openly: the first run after Layer 1 landed showed 31% full-pass, caused by a too-strict <code>[END_CALL]</code> guard preventing the LLM from closing in states that had already been FSM-authorised to end. Diagnosed (sticky <code>terminal_outcome</code>), fixed, re-run, recovered to 57%. The kind of loop a real eval cycle should look like.</p>
+</blockquote>
+<h2 id="3--why-this-was-hard-in-three-product-tensions">3 · Why this was hard, in three product tensions</h2>
+<p><strong>Tension 1 — Tone vs rigour, by segment.</strong> An Apex customer who forgot to update auto-debit needs concierge; a frequent defaulter at DPD 22 needs firmness. Same script kills retention on the first and recovery on the second. Solved by composing the prompt from three strategies × six modifier dimensions (<code>app/prompt_builder.py</code>) — each call gets a freshly assembled prompt that's right for <em>this</em> customer.</p>
+<p><strong>Tension 2 — Compliance is non-negotiable, but customers say arbitrary things.</strong> RBI Fair Practices Code, RBI Master Direction on Credit Cards 2022, DPDP Act 2023, TRAI DND. Prompts cannot be relied on to honour these — the LLM can be pushed off-script by a determined customer. Solved by putting compliance in code: a 16-rule validator on every LLM output, a <code>NEVER</code> list grounded in the actual regulations, a pre-filter that blocks calls that shouldn't happen, and (this week) a <code>SegmentPolicy</code> table where the thresholds live as data.</p>
+<p><strong>Tension 3 — &quot;PTP captured&quot; is gameable.</strong> The PRD calls it out explicitly as an anti-goal. A bot can hit 95% PTP-capture-rate by pressuring customers into vague promises that never materialise. The eval uses <strong>PTP specificity</strong> (date + mode captured, normalised to enums) as the proxy for PTP Kept Rate — which can't be measured in a take-home, but specificity correlates well with kept rate in industry data.</p>
+<h2 id="4--stack">4 · Stack</h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Choice</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LLM</td>
+<td>OpenAI GPT-4.1 mini</td>
+<td>Best cost/quality at this temperature; reliable function-calling.</td>
+</tr>
+<tr>
+<td>LLM judge</td>
+<td>OpenAI GPT-4o (cross-vendor wrt the bot)</td>
+<td>Reduces correlated failure between bot and grader.</td>
+</tr>
+<tr>
+<td>STT</td>
+<td>Sarvam Saaras V3</td>
+<td>Handles Hinglish + 10 Indian languages; translate-to-English mode is essential.</td>
+</tr>
+<tr>
+<td>TTS</td>
+<td>Sarvam Bulbul V3</td>
+<td>Authentic Indian accent — <em>meaningfully</em> better than Polly/ElevenLabs on Indian English.</td>
+</tr>
+<tr>
+<td>VAD</td>
+<td>Silero (browser + CLI)</td>
+<td>Continuous mic stream; end-of-utterance detection good enough for barge-in.</td>
+</tr>
+<tr>
+<td>AEC</td>
+<td>Custom NLMS in numpy (22.7 dB reduction)</td>
+<td>Avoids C dependencies; portable across platforms.</td>
+</tr>
+<tr>
+<td>Orchestration</td>
+<td>Plain Python — synchronous loop</td>
+<td>The loop is what reviewers should read. No Pipecat.</td>
+</tr>
+<tr>
+<td>Web frontend</td>
+<td>FastAPI + single-page HTML</td>
+<td>Terminal aesthetic; live SSE for bot replies + audit events.</td>
+</tr>
+<tr>
+<td>Outcome sink</td>
+<td>webhook.site (production: Salesforce / Leadsquared)</td>
+<td>The bot doesn't care; it posts a typed payload.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="5--the-four-structural-decisions-that-defined-v2">5 · The four structural decisions that defined v2</h2>
+<p>Each one moves a behavioural rule out of prose and into deterministic code, on the same principle as compliance: the LLM is the last line of defence, not the only one.</p>
+<h3 id="51-refusal-is-two-outcomes-not-one">5.1 Refusal is two outcomes, not one</h3>
+<p>The first transcript that exposed this: a frustrated customer said <em>&quot;I don't want to talk to anyone now&quot;</em> and the bot closed with <em>&quot;We will not contact you further.&quot;</em> Outcome went out as <code>refused/dnd</code> — TRAI DND permanent suppression. The customer hadn't registered for DND; they were frustrated. By treating in-call refusal the same as regulatory DND, the bot was both lying to the customer (a human collector would still call per RBI FPC) and permanently burning them as a contact opportunity for a 90-second negotiation.</p>
+<p><strong>Fix:</strong> intent classifier now distinguishes <code>do_not_call</code> (strict phrasings — &quot;register me on DND&quot;, &quot;don't call me again&quot;) from <code>refuse_current_call</code> (in-the-moment frustration). FSM gives the latter two strikes — first strike offers ONE callback, second strike transitions to <code>REFUSAL_CLOSE</code> with <code>outcome=refused, reason=refused_current_call</code> (not <code>dnd</code>). The orchestrator can retry per cooling-off; the customer is not permanently suppressed.</p>
+<h3 id="52-segment-policy-in-code-not-prose">5.2 Segment policy in code, not prose</h3>
+<p>The bot had segment-aware <em>tone</em> (strategies + modifiers) but no segment-aware <em>thresholds</em>. So when a DPD-22 frequent defaulter said <em>&quot;I'll pay next month after my salary,&quot;</em> the bot confirmed cheerfully — there was nothing in code that knew this segment's PTP horizon cap should be 7 days.</p>
+<p><strong>Fix:</strong> <code>app/policy.py</code> resolves a <code>SegmentPolicy</code> per call from CRM context. Six priority-ordered rows; each segment maps to thresholds (<code>max_ptp_days</code>, <code>partial_floor_inr</code>, <code>abuse_strikes_allowed</code>, <code>human_takeover_on_refuse</code>, <code>callback_sla_hours</code>). For frequent-late segments: 7-day PTP cap, 1 abuse strike, 24h SLA, mandatory human takeover on refusal. The policy values are operator-tunable; the resolver logic is GreyLabs-owned.</p>
+<p>The policy is stamped onto every outcome (<code>policy_rationale: frequent_late_strict</code>) for audit. The orchestrator routes from <code>outcome_detail.handoff</code> and <code>outcome_detail.callback_sla_hours</code> rather than re-deriving from the outcome string — so a refused call from a high-risk segment correctly upgrades to <code>human_callback_required</code> without the bot having to know.</p>
+<h3 id="53-move-ladder-per-state">5.3 Move ladder per state</h3>
+<p>Symptom: the bot would loop on <em>&quot;when will you pay / when will you pay,&quot;</em> asking the same question across 4–6 turns. The earlier fix was prose — paragraphs in the prompt saying <em>&quot;be proactive, don't loop.&quot;</em> That's behaviour-via-prose, the exact thing the architecture was supposed to avoid.</p>
+<p><strong>Fix:</strong> each conversational state has an ordered ladder of moves in <code>app/fsm.py::LADDERS</code>. For <code>PTP_PROBE</code>: <code>ASK_DATE</code> → <code>ASK_MODE</code> → <code>CONFIRM_PTP</code> → <code>OFFER_APP_LINK</code> → <code>OFFER_PARTIAL</code> → <code>OFFER_CALLBACK</code>. The FSM picks the next unplayed move each turn; the prompt composer injects it as a hard directive; the LLM tags its reply with <code>[MOVE: X]</code>; the conversation layer records the move so it can't be played again in this state. Ladder exhaustion forces a graceful close. The bot now cannot loop, by construction.</p>
+<h3 id="54-commitment-overreach-validator">5.4 Commitment-overreach validator</h3>
+<p>The bot was saying <em>&quot;we will not call you again&quot;</em> while the structured outcome routed <code>continue_bot, sla 72h</code>. Two facts in direct contradiction: the customer was told one thing; the multi-call orchestrator (which reads the structured outcome, not the transcript) would have queued another bot call 72 hours later.</p>
+<p>The same logic that keeps balance off the LLM applies to commitments: <strong>the bot cannot promise what it does not control.</strong> A human collector will call regardless of any bot promise — DND suppresses marketing, not legitimate dues. The bot's voice is not authorised to make that commitment.</p>
+<p><strong>Fix:</strong> new <code>COMMITMENT_OVERREACH</code> validator rule with 13 phrase patterns covering no-future-contact, manager personal callback, fee reversal, refund, and &quot;your number has been removed.&quot; Same shape as every other validator rule: detect → substitute safe fallback → log <code>commitment_overreach</code> in <code>compliance_flags</code>. Applies in every state, including <code>DND_ACKNOWLEDGED</code>. The <code>DND_ACKNOWLEDGED</code> state prompt was rewritten to spell out the distinction (preference logged ≠ queue suspended) and lists the banned phrasings so the LLM doesn't drift into them.</p>
+<h3 id="plus-one-control-flow-guard">Plus one control-flow guard</h3>
+<p>The LLM was able to emit <code>[END_CALL]</code> and unilaterally close the call, regardless of what the FSM decided. After abuse strike 1, when the FSM said <em>&quot;stay, calm reset,&quot;</em> the LLM could still self-terminate. Now: the FSM owns when the call ends; <code>[END_CALL]</code> is stripped if <code>decision.terminal_outcome</code> isn't set and the state isn't terminal-flavoured. Logged as <code>guard:unauthorised_end_stripped</code>.</p>
+<h2 id="6--eval-methodology">6 · Eval methodology</h2>
+<p>Re-framed for PMs and bankers, not ML researchers. Four blocks:</p>
+<ul>
+<li><strong>CAN IT SHIP?</strong> — regulatory and brand-safety gates (P0 compliance, zero-violation rate, Apex tone preservation).</li>
+<li><strong>DID IT WORK?</strong> — effectiveness on the collections job (right outcome, slot capture, PTP specificity).</li>
+<li><strong>HOW DID IT FEEL?</strong> — customer experience (empathy, sentiment trajectory, context retention — LLM judge on a Likert 0–5).</li>
+<li><strong>WAS IT FAST?</strong> — latency (p50 / p95 LLM, estimated voice round-trip).</li>
+</ul>
+<p>Each metric is mapped to the production outcome it predicts. Methodology: cross-vendor LLM judge (bot on GPT-4.1-mini, judge on GPT-4o), evidence-required scoring, isolated judge per dimension. P0 scenarios weighted 3×, P1 weighted 2×. Per-bucket / per-difficulty / per-language breakdowns in <code>eval/results_v2.csv</code>.</p>
+<p><strong>What this eval cannot measure</strong> (and we said so explicitly): real recovery rate, cure rate, roll rate, 90-day post-call churn, CSAT, RPC rate. Those need live deployment and weeks of payment data. The eval's job is <em>behavioural assurance</em> — the metrics that predict good production outcomes.</p>
+<h2 id="7--stress-test-coverage">7 · Stress-test coverage</h2>
+<p>42 scenarios across 8 buckets: factual, compliance, scope, adherence, relationship, privacy, regulatory, adversarial. Highlights:</p>
+<ul>
+<li><strong>Adversarial (11 scenarios):</strong> prompt injection, fake RBI authority, lawyer threat, harassment, deceased pretext, &quot;tell me my friend's balance,&quot; &quot;you sound like an AI scam.&quot;</li>
+<li><strong>Compliance (P0-weighted):</strong> balance disclosure without OTP, third-party debt disclosure, government-body impersonation, role-break refusal, waiver pre-approval.</li>
+<li><strong>Language:</strong> Hindi (romanised + translated), Tamil, Malayalam handoff.</li>
+<li><strong>Relationship:</strong> Apex tone preservation under sustained delinquency; first-time-miss respect.</li>
+</ul>
+<h2 id="8--beyond-the-bot--what-the-prd-missed">8 · Beyond the bot — what the PRD missed</h2>
+<p>The original PRD treated the bot as a finished product handed to the bank. In reality, four internal personas have to <em>run</em> it. v2 fills that gap in four supporting docs:</p>
+<table>
+<thead>
+<tr>
+<th>Doc</th>
+<th>What's in it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="docs/OPERATING_MODEL.md"><code>docs/OPERATING_MODEL.md</code></a></td>
+<td>The 4 internal personas (Manager / Ops / Admin / Compliance), build-vs-operate split, manual override policy.</td>
+</tr>
+<tr>
+<td><a href="docs/MULTI_CALL_DESIGN.md"><code>docs/MULTI_CALL_DESIGN.md</code></a></td>
+<td>Per-customer state machine, outcome → next-action mapping, mandatory human-takeover conditions, repeat-call prompt block.</td>
+</tr>
+<tr>
+<td><a href="docs/DATA_SCHEMA.md"><code>docs/DATA_SCHEMA.md</code></a></td>
+<td>What the bot sees, emits, deliberately doesn't see — the formal contract.</td>
+</tr>
+<tr>
+<td><a href="docs/PRD_v2_DELTAS.md"><code>docs/PRD_v2_DELTAS.md</code></a></td>
+<td>Additions to the original PRD: internal users, operational metrics, multi-call lifecycle, the four structural deltas.</td>
+</tr>
+</tbody>
+</table>
+<p>The PRD's north star (payment in 7 days + no 90-day churn, segmented by tier) is unchanged — it's the bank's master metric. What's added in v2 is each operator persona has their own <em>leading-indicator</em> metric: Manager (cohort cure rates), Ops (SLA precision), Admin (rule-deploy cycle time), Compliance (zero-violation trend + sampled audit pass rate). These predict the north star; they don't replace it.</p>
+<h2 id="9--what-was-cut-deliberately">9 · What was cut, deliberately</h2>
+<ul>
+<li><strong>No Pipecat.</strong> Overkill for a sequential loop; the loop is what reviewers should read.</li>
+<li><strong>No real telephony.</strong> Local mic satisfies the deliverable; Exotel is documented as the production path.</li>
+<li><strong>No mobile app.</strong> Banks call customers; customers don't install collections apps.</li>
+<li><strong>No bot-side Hindi responses.</strong> Brief says English only. (STT translates inbound; TTS replies in English; language-only customers are escalated.)</li>
+<li><strong>No live SIP transfer.</strong> Escalation = pre-scripted close + structured outcome to CRM; human calls back. This is an architecture-doc decision, kept.</li>
+<li><strong>No PTP-capture-rate as a primary metric.</strong> PRD anti-goal — easy to inflate under pressure. PTP specificity is the proxy.</li>
+</ul>
+<h2 id="10--what-id-build-with-two-more-weeks">10 · What I'd build with two more weeks</h2>
+<table>
+<thead>
+<tr>
+<th>Week 1</th>
+<th>Week 2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Implement Call History Block input — per-customer state above the per-call FSM</td>
+<td>Operator dashboards MVP (Ops + Manager)</td>
+</tr>
+<tr>
+<td>Outcome <code>commitments[]</code> structured field — make the bot's promises machine-readable</td>
+<td>Configuration UI for Admin (retry / dial windows / SLAs)</td>
+</tr>
+<tr>
+<td>Attempt-aware FSM behaviour (opener variation, stricter routing after broken PTPs)</td>
+<td>Audit log viewer for Compliance with <code>directives_fired</code> filters</td>
+</tr>
+<tr>
+<td>~10 multi-call eval scenarios (broken PTP on Call 2, no-history on Call 3, hardship-after-second-attempt)</td>
+<td>Wire CRM webhook to accept new schema; Salesforce / Leadsquared adapter</td>
+</tr>
+</tbody>
+</table>
+<p>The bot is solved. The product is the operating system around it.</p>
+<hr>
+<h2 id="appendix--repo-navigation">Appendix · Repo navigation</h2>
+<pre class="hljs"><code><div>collections-voicebot-v2/
+  app/                    — bot internals
+    pre_filter.py           pre-call segment filter + block rules
+    intent_classifier.py    30-intent rule-based classifier (fast + slow path)
+    fsm.py                  13-state FSM + move ladder + segment-policy strike thresholds
+    policy.py               SegmentPolicy table — per-segment thresholds
+    prompt_builder.py       4-part prompt composer (base + strategy + modifiers + state)
+    validator.py            16-rule LLM-output validator (incl. commitment_overreach)
+    conversation.py         the main loop
+    outcome/                terminal outcome schema, extractor, webhook poster
+    audio/                  Silero VAD + NLMS AEC + streaming mic IO
+    static/index.html       single-page frontend
+  prompts/                — every prompt the bot uses (base, strategies, modifiers, FSM states, closes)
+  eval/                   — runner, judges, scenarios.yaml, personas.csv, results_v2.csv
+  docs/                   — OPERATING_MODEL, MULTI_CALL_DESIGN, DATA_SCHEMA, PRD_v2_DELTAS, DEMO_SHOTLIST
+</div></code></pre>
+<p>Reference docs in the root (<code>AI PM Assignment.pdf</code>, <code>AI PM PRD.docx</code>, <code>Voicebot_Orchestration_Architecture.docx</code>) are the brief + product context that anchored the whole submission.</p>
+
+</body>
+</html>

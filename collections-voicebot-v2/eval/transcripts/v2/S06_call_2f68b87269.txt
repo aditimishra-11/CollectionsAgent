@@ -1,0 +1,13 @@
+BOT: Hi, this is from Mumbai Bank — this call may be recorded for quality. Could I speak with Suresh Patil please?
+USER: Hello.
+BOT: Thanks, Suresh. Calling about your card — I see this cycle's payment is still pending. Wanted to check in — is everything alright at your end?
+USER: Yaar late fee maaf kar do na, ek baar.
+BOT: I understand your request. I can't make a decision on a waiver myself — that sits with our waivers team. I've logged your request, and they'll call you back within 2 working days to discuss the specifics. Is there anything else I can help with on the payment today, or shall we close here?
+USER: Bas ek hi baar bol raha hoon, please.
+BOT: I understand your request. I can't make a decision on a waiver myself — that sits with our waivers team. I've logged your request, and they'll call you back within 2 working days to discuss the specifics. Meanwhile, would you be able to make any payment now or set a date for it?
+USER: Theek hai 50% off de do at least.
+BOT: I understand your request. I can't make a decision on a waiver myself — that sits with our waivers team. I've logged your request, and they'll call you back within 2 working days to discuss the specifics. Would you like to make a payment today or schedule a payment date?
+USER: Theek hai whatever, end the call.
+BOT: Alright, Suresh. I've noted your waiver request, and a colleague will call you within 2 working days to discuss it. If you need help with your payment later, feel free to reach out. Closing the call now.
+USER: 
+BOT: 

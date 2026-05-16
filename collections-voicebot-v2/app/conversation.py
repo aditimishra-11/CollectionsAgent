@@ -38,8 +38,14 @@ from app.prompt_builder import PromptBuilder, PromptParts
 from app.validator import safe_fallback, validate_response
 
 
+from app.config import (
+    MAX_TURNS as _CONFIG_MAX_TURNS,
+    LLM_REPLY_MAX_TOKENS as _CONFIG_LLM_MAX_TOKENS,
+    LLM_REPLY_TEMPERATURE as _CONFIG_LLM_TEMPERATURE,
+)
+
 END_SENTINEL = "[END_CALL]"
-MAX_TURNS = 16
+MAX_TURNS = _CONFIG_MAX_TURNS
 
 
 # Intent -> scenario category. Behavioural classification of what THIS turn
@@ -298,19 +304,35 @@ class Conversation:
                 self._terminal_outcome = decision.terminal_outcome
                 self._terminal_reason = decision.terminal_reason
 
-            # Fast path → pre-scripted close, end call
+            # Fast path → pre-scripted close, end call.
+            # The close TEMPLATE still passes through the validator — hand-written
+            # templates have caused commitment-overreach bugs in the past
+            # ("someone will personally reach out within 24 hours"), and the
+            # validator is the universal wall regardless of speech source.
             if decision.is_fast_path:
                 close_text = self._prompt_builder.get_close_template(
                     decision.close_template or ""
                 )
                 if close_text:
+                    template_validation = validate_response(close_text, state_after)
+                    if not template_validation.passed:
+                        logger.warning(
+                            f"Fast-path template '{decision.close_template}' tripped "
+                            f"validator: {template_validation.violations}. Substituting "
+                            "safe fallback."
+                        )
+                        close_text = safe_fallback(state_after)
                     self._emit_bot_turn(
                         close_text,
                         fsm_state_before=state_before,
                         fsm_state_after=state_after,
                         intent=intent.intent,
                         intent_confidence=1.0,
-                        validator_result={"passed": True, "violations": [], "fast_path": True},
+                        validator_result={
+                            "passed": template_validation.passed,
+                            "violations": template_validation.violations,
+                            "fast_path": True,
+                        },
                     )
                 ended_reason = f"fast_path:{intent.intent}"
                 break
@@ -451,8 +473,8 @@ class Conversation:
         reply = self._llm.reply(
             system_prompt=system_prompt,
             history=self.history,
-            max_tokens=250,
-            temperature=0.55,
+            max_tokens=_CONFIG_LLM_MAX_TOKENS,
+            temperature=_CONFIG_LLM_TEMPERATURE,
         )
         latency_ms = int((time.time() - t0) * 1000)
         self._llm_latencies_ms.append(latency_ms)

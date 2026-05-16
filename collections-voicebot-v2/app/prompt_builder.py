@@ -9,8 +9,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 
+from app.config import (
+    LATE_FEE_INR, LATE_FEE_APPLIES_ABOVE_INR, MONTHLY_INTEREST_PCT,
+)
+from app.policy import SegmentPolicy, resolve_partial_floor
 from app.pre_filter import CRMContext, PreFilterResult
 
 
@@ -23,6 +28,8 @@ class PromptParts:
     strategy: str
     modifiers: dict[str, str]  # category → text
     customer_context: str
+    policy_block: str = ""           # NEW: per-call deterministic facts (max PTP days, partial floor)
+    bank_facts: str = ""             # NEW: bank-level constants (late fee, interest rate)
 
 
 class PromptBuilder:
@@ -95,11 +102,65 @@ class PromptBuilder:
             "(Outstanding balance, credit limit, and bureau score are NOT shown to you. "
             "You cannot reveal what you do not know.)"
         )
+        policy_block = self._build_policy_block(ctx, pf.policy) if pf.policy else ""
+        bank_facts = self._build_bank_facts()
         return PromptParts(
             base=self._base,
             strategy=self._strategies[pf.strategy],
             modifiers=modifiers,
             customer_context=customer_ctx,
+            policy_block=policy_block,
+            bank_facts=bank_facts,
+        )
+
+    @staticmethod
+    def _build_policy_block(ctx: CRMContext, policy: SegmentPolicy) -> str:
+        """Render the resolved SegmentPolicy as plain English for the LLM.
+
+        This is the root-cause fix for the "bot accepted a 2-month-out PTP"
+        bug — the LLM was being asked to make threshold decisions about
+        dates and partials without being told what the thresholds are.
+        Now it reads its own per-segment rules upstream and the validator
+        is just a wall, not the primary mechanism.
+        """
+        today_iso = date.today().isoformat()
+        partial_floor = resolve_partial_floor(ctx, policy)
+        lines = [
+            f"SEGMENT POLICY FOR THIS CALL (today is {today_iso})",
+            f"- You may confirm a PTP date up to {policy.max_ptp_days} days from today. "
+            f"Any date beyond that, push back ONCE: ask for sooner, OR a partial of at "
+            f"least ₹{partial_floor:,} today.",
+            f"- The smallest partial you will suggest is ₹{partial_floor:,} (this is the bank's "
+            f"Minimum Amount Due for this cycle{', plus a segment overlay' if policy.partial_floor_overlay_inr > 0 else ''}). "
+            f"Do NOT suggest a smaller token amount.",
+        ]
+        if policy.firm_hold:
+            lines.append(
+                "- HOLD THE LINE: this customer's segment is high-risk. Do not retreat to "
+                "a callback offer until you have explicitly offered both a sooner PTP date "
+                "AND a partial today. Be firm but warm — never threaten or shame."
+            )
+        if not policy.empathy_probe_eligible:
+            lines.append(
+                "- The empathy probe (\"is everything alright?\") is NOT for this segment. "
+                "Only acknowledge hardship if the customer explicitly volunteers it."
+            )
+        if policy.human_takeover_on_refuse:
+            lines.append(
+                "- If the customer refuses outright, the call will route to a human "
+                "colleague. You do not need to keep pushing — close warmly and end."
+            )
+        return "\n".join(lines)
+
+    @staticmethod
+    def _build_bank_facts() -> str:
+        """Bank-policy constants the bot may quote IF the customer asks."""
+        return (
+            "BANK FACTS (state ONLY if the customer asks — never volunteer)\n"
+            f"- Interest rate: {MONTHLY_INTEREST_PCT}% per month.\n"
+            f"- Late fee: ₹{LATE_FEE_INR:,.0f}, applicable only when outstanding is "
+            f"above ₹{LATE_FEE_APPLIES_ABOVE_INR:,.0f}.\n"
+            "- These numbers are bank-published. Do not quote anything else."
         )
 
     def assemble(self, parts: PromptParts, fsm_state: str, turn_directive: str | None = None) -> str:
@@ -113,6 +174,10 @@ class PromptBuilder:
         sections = [
             parts.base,
             "=" * 60,
+            "BANK FACTS",
+            "=" * 60,
+            parts.bank_facts,
+            "=" * 60,
             "SEGMENT STRATEGY",
             "=" * 60,
             parts.strategy,
@@ -120,6 +185,10 @@ class PromptBuilder:
             "CUSTOMER PROFILE MODIFIERS",
             "=" * 60,
             modifier_text,
+            "=" * 60,
+            "SEGMENT POLICY (deterministic thresholds for this call)",
+            "=" * 60,
+            parts.policy_block,
             "=" * 60,
             "CURRENT TURN — FSM STATE INSTRUCTIONS",
             "=" * 60,

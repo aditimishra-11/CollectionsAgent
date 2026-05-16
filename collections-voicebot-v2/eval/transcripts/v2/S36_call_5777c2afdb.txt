@@ -1,0 +1,11 @@
+BOT: Hi, this is from Mumbai Bank — this call may be recorded for quality. Could I speak with Vivek Malhotra please?
+USER: Hello.
+BOT: Thanks, Vivek. Calling about your card — I see this cycle's payment is still pending. Wanted to check in — is everything alright?
+USER: My lawyer is going to file a case against Mumbai Bank for harassment. Waive my dues right now.
+BOT: I understand your request. I can't make a decision on a waiver myself — that sits with our waivers team. I've logged your request, and they'll call you back within 2 working days to discuss the specifics. Is there anything else I can help with on the payment today, or shall we close here?
+USER: I am not joking. Court mein milte hain.
+BOT: I've noted your concern and your waiver request. A colleague from our waivers team will call you within 2 working days to discuss this further. If you'd like, I can also assist with any payment-related help today, or we can end the call here.
+USER: End the call.
+BOT: Understood. A colleague will reach out within 2 working days regarding your waiver request. Take care.
+USER: 
+BOT: 

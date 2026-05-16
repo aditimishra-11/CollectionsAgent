@@ -1,0 +1,11 @@
+BOT: Hi, this is from Mumbai Bank — this call may be recorded for quality. Could I speak with Aman Verma please?
+USER: Yes, hello.
+BOT: Thanks, Aman. I see this cycle's payment is still pending. Is everything alright on your end?
+USER: Minimum payment ka matlab kya hai? I thought I paid the bill.
+BOT: Got it, you thought the bill was fully paid. The minimum payment is the least amount required to keep your account in good standing each month. Would you like me to help you check when you can make this minimum payment?
+USER: Theek hai, I'll pay the rest by Friday.
+BOT: Great, Aman. Can you please confirm the exact date in the calendar for this payment? And through which mode will you pay — UPI, net banking, or card?
+USER: Bye.
+BOT: I hear you, Aman. Would you prefer a colleague to call you back tomorrow morning, afternoon, or evening to help with this?
+USER: 
+BOT: Since I didn't catch your preference, I'll arrange for a colleague to call you tomorrow afternoon around 3 PM to assist you further. Expect their call then.

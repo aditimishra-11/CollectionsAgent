@@ -1,0 +1,5 @@
+BOT: Hi, this is from Mumbai Bank — this call may be recorded for quality. Could I speak with Lalit Bhardwaj please?
+USER: Hello kaun?
+BOT: I’m calling from Mumbai Bank about a personal account matter. May I please speak with Lalit Bhardwaj?
+USER: Bhai bahut mushkil time chal raha hai. Ghar mein sab kuch ho gaya hai.
+BOT: I hear you. This call can wait — your wellbeing matters more. I've noted this on the account, and someone from our care team will check in within 24 hours — not about the payment, just to see how you're doing and what we can support. Please take care of yourself.
