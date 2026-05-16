@@ -372,6 +372,12 @@ _INTENTS: list[tuple[str, IntentPath, list[re.Pattern]]] = [
             re.compile(r"\b\d{1,2}(st|nd|rd|th)?\s+(tak|by)\b", re.I),
             # "I'll pay next month" / "I'll pay it next to next month" — common Hinglish phrasing
             re.compile(r"\b(i\s+will|i\s*'?\s*ll|main|hum)\s+pay\s+(it\s+)?(next|after|once|when|by)\b", re.I),
+            # "I'll make the payment" / "make a payment" — Demo 1 P01 said this and
+            # was classified as 'general', leaving the FSM stuck in COLLECTING
+            # and the bot unable to close. Common Indian English phrasing.
+            re.compile(r"\b(i\s+will|i\s*'?\s*ll|main|hum)\s+(make|do)\s+(the\s+|a\s+)?payment\b", re.I),
+            re.compile(r"\bmake\s+(the\s+|a\s+)?payment\s+(by|tomorrow|aaj|kal|today|tonight|next\s+week|this\s+week)\b", re.I),
+            re.compile(r"\b(i\s+will|i\s*'?\s*ll|main|hum)\s+(clear|settle|sort\s+out)\s+(it|the\s+(bill|payment|amount))\b", re.I),
         ],
     ),
     (

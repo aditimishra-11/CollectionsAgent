@@ -304,10 +304,17 @@ class Conversation:
             policy=pf.policy,
         ))
 
-        # 4. Opener (INTRO state — LLM-generated using the segment opener guide)
-        opener = self._llm_reply()
-        self._emit_bot_turn(opener, fsm_state_before="INTRO", fsm_state_after="INTRO")
-        if END_SENTINEL in opener:
+        # 4. Opener (INTRO state — LLM-generated using the segment opener guide).
+        # Strip the same [MOVE: ...] / [CUSTOMER_HARDSHIP: ...] sidecar tags the
+        # main loop strips — otherwise they leak into TTS as visible noise on
+        # the very first message ("[MOVE: ASK_REASON] [CUSTOMER_HARDSHIP: false]").
+        opener_raw = self._llm_reply()
+        opener_after_move, opener_clean = _extract_move_tag(opener_raw)
+        _opener_hardship, opener_clean = _extract_hardship_tag(opener_clean)
+        if opener_after_move:
+            self._fsm.record_move(opener_after_move)
+        self._emit_bot_turn(opener_clean, fsm_state_before="INTRO", fsm_state_after="INTRO")
+        if END_SENTINEL in opener_clean:
             return self._finalise(start)
 
         # Move out of INTRO unconditionally — opener is one shot.
@@ -461,6 +468,26 @@ class Conversation:
                     "Recording the required move anyway so we don't loop."
                 )
                 self._fsm.record_move(move)
+
+            # Move-derived terminal authorisation. If the LLM played a
+            # "wrap-up" move (CONFIRM_PTP = PTP captured and confirmed back;
+            # OFFER_CALLBACK = customer routed to human queue), the call is
+            # ready to end — flip the sticky terminal flag so the LLM's next
+            # [END_CALL] is honoured. This fixes the case where the intent
+            # classifier missed the PTP utterance ("I'll make the payment
+            # tomorrow" matches no regex) but the LLM correctly captured it
+            # and is trying to close.
+            effective_move = played_move or (move if not ladder_exhausted else None)
+            if effective_move == "CONFIRM_PTP" and not self._terminal_outcome:
+                self._terminal_outcome = "promise_to_pay"
+                self._terminal_reason = "captured_via_move_ladder"
+                directives_fired.append("fsm:terminal_authorised_via_CONFIRM_PTP")
+            elif effective_move == "OFFER_CALLBACK" and not self._terminal_outcome:
+                # OFFER_CALLBACK only authorises close after the customer has
+                # been given a chance to respond on the next turn — so we DON'T
+                # set terminal_outcome here, just allow the END_CALL guard to
+                # honour [END_CALL] on the NEXT turn if the customer accepts/refuses.
+                pass
 
             # Mid-call hardship signal — STRUCTURAL fix for the PRD anti-goal
             # ("no payment pressure after distress"). The LLM emits
