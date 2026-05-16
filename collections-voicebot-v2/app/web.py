@@ -161,6 +161,12 @@ class WebCall:
         self.user_q.put(text)
 
     def end_now(self) -> None:
+        """Hard end-of-call from the END button. Sets a sticky flag so the
+        conversation loop breaks out on its next user-turn fetch — regardless
+        of FSM state or turn count. Also unblocks the queue with an empty
+        string so the loop can read the flag immediately.
+        """
+        self.conv._user_requested_end = True  # type: ignore[attr-defined]
         self.user_q.put("")
 
 

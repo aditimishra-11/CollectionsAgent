@@ -623,6 +623,8 @@
         _refreshVadChips();
         await setupVAD();
         endBtn.classList.remove('hidden');
+        endBtn.disabled = false;
+        endBtn.textContent = '◼ END';
         startBtn.textContent = '● LIVE';
         openStream(data.call_id);
       } catch (e) {
@@ -687,7 +689,25 @@
 
     endBtn.addEventListener('click', async () => {
       if (!currentCallId) return;
-      await fetch(`/api/call/${currentCallId}/end`, { method: 'POST' });
+      // Click feedback FIRST so the user sees something happens immediately.
+      endBtn.disabled = true;
+      endBtn.textContent = '◼ ENDING…';
+      voiceStatus.textContent = 'ending call…';
+      // Stop everything client-side so a stray utterance doesn't sneak in
+      // after we asked the server to end the call:
+      //  - clear any pending coalesce-window audio submission
+      //  - tear down the VAD so no new utterance starts
+      //  - cut the bot's audio mid-sentence if it's playing
+      if (settleTimer)  { clearTimeout(settleTimer);  settleTimer  = null; }
+      if (bargeInTimer) { clearTimeout(bargeInTimer); bargeInTimer = null; }
+      pendingAudio = null;
+      stopVAD();
+      stopCurrentBotAudio();
+      try {
+        await fetch(`/api/call/${currentCallId}/end`, { method: 'POST' });
+      } catch (err) {
+        addLine('error', 'end-call request failed: ' + err.message);
+      }
     });
 
     // -------------------- voice: continuous Silero VAD in browser --------------------

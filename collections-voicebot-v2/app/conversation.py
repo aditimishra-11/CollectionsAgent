@@ -244,6 +244,10 @@ class Conversation:
         self._policy = None  # SegmentPolicy | None — populated in run() after pre-filter
         self._terminal_outcome: str | None = None
         self._terminal_reason: str | None = None
+        # Sticky flag set by the END button (via WebCall.end_now). Honoured at
+        # the top of every user-turn iteration so the call exits cleanly
+        # regardless of FSM state or turn count.
+        self._user_requested_end: bool = False
 
     # --------------------------------------------------------- entry
 
@@ -293,6 +297,14 @@ class Conversation:
         ended_reason = "max_turns"
         for _ in range(MAX_TURNS):
             user_text = self._get_user_text()
+            # END button pressed — break out immediately regardless of FSM state
+            # or turn count. Stamped onto the outcome as 'user_ended'.
+            if self._user_requested_end:
+                ended_reason = "user_ended"
+                if not self._terminal_outcome:
+                    self._terminal_outcome = "no_answer"
+                    self._terminal_reason = "user_ended_call"
+                break
             if not user_text.strip():
                 # silence — let classifier return no_response
                 pass
