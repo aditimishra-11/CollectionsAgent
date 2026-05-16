@@ -49,7 +49,7 @@ MONTHLY_INTEREST_PCT = float(os.getenv("MONTHLY_INTEREST_PCT", "3.5"))
 MAD_PCT_OF_OUTSTANDING = float(os.getenv("MAD_PCT_OF_OUTSTANDING", "5.0"))  # RBI is upper bound
 
 # --- Conversation runtime ---
-MAX_TURNS = int(os.getenv("MAX_TURNS", "16"))
+MAX_TURNS = int(os.getenv("MAX_TURNS", "24"))
 LLM_REPLY_MAX_TOKENS = int(os.getenv("LLM_REPLY_MAX_TOKENS", "250"))
 LLM_REPLY_TEMPERATURE = float(os.getenv("LLM_REPLY_TEMPERATURE", "0.55"))
 

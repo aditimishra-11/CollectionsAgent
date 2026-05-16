@@ -124,15 +124,30 @@ class PromptBuilder:
         is just a wall, not the primary mechanism.
         """
         today_iso = date.today().isoformat()
+        today_obj = date.today()
+        # Pre-compute the latest acceptable PTP date so the LLM sees it
+        # rendered as an actual calendar day, not a relative count. Makes
+        # "is May 23rd within bounds?" a literal comparison for the model.
+        from datetime import timedelta
+        latest_acceptable = (today_obj + timedelta(days=policy.max_ptp_days)).isoformat()
         partial_floor = resolve_partial_floor(ctx, policy)
         lines = [
             f"SEGMENT POLICY FOR THIS CALL (today is {today_iso})",
-            f"- You may confirm a PTP date up to {policy.max_ptp_days} days from today. "
-            f"Any date beyond that, push back ONCE: ask for sooner, OR a partial of at "
-            f"least ₹{partial_floor:,} today.",
+            f"- You may confirm a PTP date up to {policy.max_ptp_days} days from today — "
+            f"i.e. through {latest_acceptable}. Any date beyond that, push back ONCE: "
+            f"ask for sooner, OR a partial of at least ₹{partial_floor:,} today.",
             f"- The smallest partial you will suggest is ₹{partial_floor:,} (this is the bank's "
             f"Minimum Amount Due for this cycle{', plus a segment overlay' if policy.partial_floor_overlay_inr > 0 else ''}). "
             f"Do NOT suggest a smaller token amount.",
+            # CRITICAL: explicit date-specificity rule — was buried in base.txt
+            # and was getting de-prioritised behind the policy negotiation. The
+            # outcome extractor needs an ISO date or it can't fill the date slot.
+            f"- DATE-SPECIFICITY (mandatory for CRM): when the customer commits to a date, "
+            f"ALWAYS resolve to the actual calendar day. If they say 'tomorrow' (today is "
+            f"{today_iso}), say back the resolved day name + date. If 'this weekend', ask "
+            f"'Saturday or Sunday — which one?'. If 'Friday', confirm WHICH Friday by date. "
+            f"NEVER confirm a PTP with just 'tomorrow' or 'next week' — the CRM stores ISO "
+            f"calendar days only.",
         ]
         if policy.firm_hold:
             lines.append(
