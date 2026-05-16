@@ -130,6 +130,11 @@ def _directive_from_notes(notes: str) -> str | None:
 import re as _re_layer1
 
 _MOVE_TAG_RE = _re_layer1.compile(r"\[MOVE:\s*([A-Z_]+)\s*\]", _re_layer1.IGNORECASE)
+# Mid-call hardship signal — emitted by the LLM when the customer's words
+# imply real distress (job loss, hospital, business failure, family crisis,
+# financial bind, etc.) regardless of whether the regex-based intent
+# classifier picked it up. Sticky once true — see FSMContext.hardship_locked.
+_HARDSHIP_TAG_RE = _re_layer1.compile(r"\[CUSTOMER_HARDSHIP:\s*(true|false)\s*\]", _re_layer1.IGNORECASE)
 
 
 def _extract_move_tag(text: str) -> tuple[str | None, str]:
@@ -144,6 +149,21 @@ def _extract_move_tag(text: str) -> tuple[str | None, str]:
     move = m.group(1).strip().upper()
     cleaned = _MOVE_TAG_RE.sub("", text).strip()
     return (move, cleaned)
+
+
+def _extract_hardship_tag(text: str) -> tuple[bool | None, str]:
+    """Pull the [CUSTOMER_HARDSHIP: true|false] sidecar out of bot text.
+    Returns (signal_or_None, cleaned_text). Missing tag is treated as no
+    signal (None) — conservative default.
+    """
+    if not text:
+        return (None, text)
+    m = _HARDSHIP_TAG_RE.search(text)
+    if not m:
+        return (None, text)
+    signaled = m.group(1).strip().lower() == "true"
+    cleaned = _HARDSHIP_TAG_RE.sub("", text).strip()
+    return (signaled, cleaned)
 
 
 # ----- Layer 2: PTP-horizon detection ------------------------------------
@@ -369,6 +389,22 @@ class Conversation:
                 # Layer 3 directive (refuse_current_call_first_strike, abuse_first_strike)
                 directives_fired.append(f"fsm:{decision.notes.split(' ')[0]}")
 
+            # Hardship lock — sticky from any earlier turn this call. Highest-
+            # priority override; sits ABOVE the move-ladder directive so the
+            # LLM sees it as the dominant rule.
+            if self._fsm.context.hardship_locked:
+                hardship_override = (
+                    "HARDSHIP LOCK ACTIVE: the customer has indicated distress earlier "
+                    "in this call. Do NOT ask for a payment date, mode, partial amount, "
+                    "or push for any commitment. Acknowledge with empathy, offer ONE "
+                    "human callback if not yet offered, and close warmly with [END_CALL] "
+                    "if they accept or decline. This rule overrides any move directive below."
+                )
+                turn_directive = (
+                    (turn_directive + "\n\n" + hardship_override) if turn_directive else hardship_override
+                )
+                directives_fired.append("fsm:hardship_locked_active")
+
             # Layer 2: PTP-horizon push-back
             if state_after in {"PTP_PROBE", "COLLECTING"} and self._policy is not None:
                 horizon_directive = _ptp_horizon_directive(user_text, self._policy, self.ctx)
@@ -418,8 +454,6 @@ class Conversation:
             # conservative default).
             played_move, bot_text = _extract_move_tag(bot_text)
             if played_move:
-                # Best-effort: trust the LLM's tag; the directive specifies the
-                # required move so this should almost always match `move`.
                 self._fsm.record_move(played_move)
             elif move is not None and not ladder_exhausted:
                 logger.warning(
@@ -427,6 +461,22 @@ class Conversation:
                     "Recording the required move anyway so we don't loop."
                 )
                 self._fsm.record_move(move)
+
+            # Mid-call hardship signal — STRUCTURAL fix for the PRD anti-goal
+            # ("no payment pressure after distress"). The LLM emits
+            # [CUSTOMER_HARDSHIP: true] when the customer's words imply real
+            # distress that the regex-based intent classifier missed. Once
+            # true on this call, it stays true — and the move ladder skips
+            # all PTP-extracting moves (ASK_DATE / ASK_MODE / OFFER_PARTIAL /
+            # CONFIRM_PTP), leaving only EMPATHY_PROBE / OFFER_CALLBACK.
+            hardship_signal, bot_text = _extract_hardship_tag(bot_text)
+            if hardship_signal is True and not self._fsm.context.hardship_locked:
+                self._fsm.context.hardship_locked = True
+                directives_fired.append("fsm:hardship_locked")
+                logger.info(
+                    f"Hardship signal raised mid-call (turn {self._fsm.context.turn_count}) "
+                    f"in state={state_after}. PTP moves disabled for rest of call."
+                )
 
             # [END_CALL] guard — the FSM owns when the call ends. The LLM may
             # REQUEST a close via [END_CALL], but it's only honoured when the

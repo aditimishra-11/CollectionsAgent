@@ -41,8 +41,12 @@ Move = Literal[
 ]
 
 LADDERS: dict["State", list[Move]] = {
-    "COLLECTING": ["ASK_REASON", "ASK_DATE", "OFFER_APP_LINK", "OFFER_PARTIAL", "OFFER_CALLBACK"],
-    "PTP_PROBE":  ["ASK_DATE", "ASK_MODE", "CONFIRM_PTP", "OFFER_APP_LINK", "OFFER_PARTIAL", "OFFER_CALLBACK"],
+    # EMPATHY_PROBE included in COLLECTING + PTP_PROBE ladders so that if
+    # hardship_locked flips true mid-call (LLM saw a distress signal the
+    # regex classifier missed), the next-move resolver can still find a
+    # legitimate move without exhausting the ladder.
+    "COLLECTING": ["ASK_REASON", "ASK_DATE", "OFFER_APP_LINK", "OFFER_PARTIAL", "EMPATHY_PROBE", "OFFER_CALLBACK"],
+    "PTP_PROBE":  ["ASK_DATE", "ASK_MODE", "CONFIRM_PTP", "OFFER_APP_LINK", "OFFER_PARTIAL", "EMPATHY_PROBE", "OFFER_CALLBACK"],
     "HARDSHIP_PROBE": ["EMPATHY_PROBE", "OFFER_CALLBACK"],
 }
 
@@ -124,6 +128,13 @@ class FSMContext:
     moves_played: dict[str, list[Move]] = field(default_factory=lambda: defaultdict(list))
     turns_in_state: int = 0
     _last_state: str = "INTRO"
+    # Mid-call hardship lock — set true once the LLM emits
+    # [CUSTOMER_HARDSHIP: true]. Sticky for the rest of the call. PTP-
+    # extracting moves (ASK_DATE / ASK_MODE / OFFER_PARTIAL / CONFIRM_PTP)
+    # become INELIGIBLE once this is true; only EMPATHY_PROBE / OFFER_CALLBACK
+    # remain. This is the structural fix for the PRD anti-goal: never extract
+    # a payment commitment from a distressed customer.
+    hardship_locked: bool = False
 
 
 @dataclass
@@ -362,6 +373,16 @@ class FSM:
     def is_terminal(self) -> bool:
         return self.state in {"TERMINAL", "CALLBACK_CLOSE"}
 
+    # Moves that are INELIGIBLE once a hardship signal has been raised
+    # mid-call. PRD anti-goal: do not extract payment commitments under
+    # distress. OFFER_APP_LINK is included even though it's "passive" —
+    # a customer in distress should not hear "you can pay via the app".
+    # Only EMPATHY_PROBE and OFFER_CALLBACK remain eligible.
+    _HARDSHIP_INELIGIBLE: set[Move] = {
+        "ASK_DATE", "ASK_MODE", "CONFIRM_PTP", "OFFER_PARTIAL",
+        "OFFER_APP_LINK", "CHALLENGE_HORIZON",
+    }
+
     def next_move(self) -> tuple[Move | None, bool]:
         """Return (next move to play, ladder_exhausted) for the current state.
 
@@ -370,14 +391,21 @@ class FSM:
         composer simply doesn't inject a move directive. If the ladder IS
         managed but exhausted, returns (None, True) — the caller forces an
         exit (typically to OFFER_CALLBACK or terminal).
+
+        Hardship lock: once ``context.hardship_locked`` is true, the moves
+        in ``_HARDSHIP_INELIGIBLE`` are skipped. Only EMPATHY_PROBE and
+        OFFER_CALLBACK remain — no payment negotiation under distress.
         """
         ladder = LADDERS.get(self.state)
         if ladder is None:
             return (None, False)
         played = set(self.context.moves_played.get(self.state, []))
         for move in ladder:
-            if move not in played:
-                return (move, False)
+            if move in played:
+                continue
+            if self.context.hardship_locked and move in self._HARDSHIP_INELIGIBLE:
+                continue
+            return (move, False)
         return (None, True)
 
     def record_move(self, move: Move) -> None:
