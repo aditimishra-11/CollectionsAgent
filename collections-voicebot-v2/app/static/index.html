@@ -127,6 +127,14 @@
             <audio id="botAudio" hidden></audio>
           </div>
         </div>
+
+        <!-- Bot internals (NEW — Ops/Compliance audit view) -->
+        <details id="auditPanel" class="border-t border-gray-700 bg-black/30 hidden" open>
+          <summary class="px-4 py-2 text-xs uppercase tracking-wider text-gray-500 cursor-pointer hover:text-gray-300 select-none">
+            // bot internals — per-turn fsm / intent / validator
+          </summary>
+          <div id="auditBody" class="px-4 py-3 text-[11px] font-mono text-gray-400 space-y-0.5 max-h-40 overflow-y-auto scroll"></div>
+        </details>
       </section>
 
       <!-- RIGHT: side panels -->
@@ -136,6 +144,12 @@
         <div class="panel rounded">
           <div class="panel-hdr px-4 py-2 text-xs uppercase tracking-wider border-b border-gray-700">// crm context</div>
           <div id="crmBody" class="p-4 text-xs text-gray-500">$ no call started yet</div>
+        </div>
+
+        <!-- Cycle state (NEW — multi-call lifecycle) -->
+        <div id="cyclePanel" class="panel rounded hidden">
+          <div class="panel-hdr px-4 py-2 text-xs uppercase tracking-wider border-b border-gray-700">// cycle state</div>
+          <div id="cycleBody" class="p-4 text-xs text-gray-300 space-y-1"></div>
         </div>
 
         <!-- Segmentation decision -->
@@ -185,6 +199,10 @@
     const modifiersEl = document.getElementById('modifiers');
     const outcomePanel = document.getElementById('outcomePanel');
     const outcomeBody = document.getElementById('outcomeBody');
+    const cyclePanel = document.getElementById('cyclePanel');
+    const cycleBody = document.getElementById('cycleBody');
+    const auditPanel = document.getElementById('auditPanel');
+    const auditBody = document.getElementById('auditBody');
     const modeTextBtn = document.getElementById('modeTextBtn');
     const modeVoiceBtn = document.getElementById('modeVoiceBtn');
     const voiceControls = document.getElementById('voiceControls');
@@ -279,6 +297,25 @@
           <p class="text-gray-500 italic border-l-2 border-gray-700 pl-2">${p.description || ''}</p>
         </div>
       `;
+
+      // Render multi-call cycle state (derived — no real call history wired in)
+      renderCycleState(p);
+    }
+
+    function renderCycleState(p) {
+      const daysToHandoff = Math.max(0, 25 - Number(p.dpd || 0));
+      const handoffWarning = daysToHandoff <= 5
+        ? `<span class="glow-red">${daysToHandoff} days</span>`
+        : daysToHandoff <= 10
+          ? `<span class="glow-amber">${daysToHandoff} days</span>`
+          : `<span class="text-gray-300">${daysToHandoff} days</span>`;
+      cycleBody.innerHTML = `
+        <div><span class="text-gray-500">attempt:</span> <span class="glow-green">1 of 3</span> <span class="text-gray-600">(bot attempts before forced human takeover)</span></div>
+        <div><span class="text-gray-500">days to handoff:</span> ${handoffWarning} <span class="text-gray-600">(at DPD 25)</span></div>
+        <div><span class="text-gray-500">prior calls:</span> <span class="text-gray-300">none</span> <span class="text-gray-600">(first contact this cycle)</span></div>
+        <div><span class="text-gray-500">active overrides:</span> <span class="text-gray-300">none</span></div>
+      `;
+      cyclePanel.classList.remove('hidden');
     }
 
     // -------------------- chat rendering --------------------
@@ -302,6 +339,28 @@
       return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     }
 
+    let auditTurnCounter = 0;
+    function appendAuditRow(data) {
+      auditPanel.classList.remove('hidden');
+      auditTurnCounter += 1;
+      const sb = data.state_before || '—';
+      const sa = data.state_after || '—';
+      const intent = data.intent || '—';
+      const v = data.validator || {};
+      const validatorStr = v.fast_path
+        ? '<span class="text-gray-500">fast-path</span>'
+        : v.passed === false
+          ? `<span class="glow-red">BLOCKED</span> ${(v.violations || []).join(',')}`
+          : '<span class="glow-green">✓</span>';
+      const div = document.createElement('div');
+      div.innerHTML = `<span class="text-gray-600">turn ${auditTurnCounter}:</span>
+        <span class="text-gray-500">[${sb}</span><span class="text-gray-300">→${sa}]</span>
+        <span class="text-gray-500">intent=</span><span class="text-amber-400">${intent}</span>
+        <span class="text-gray-500">validator=</span>${validatorStr}`;
+      auditBody.appendChild(div);
+      auditBody.scrollTop = auditBody.scrollHeight;
+    }
+
     function renderSegmentation(strategy, modifiers) {
       strategyEl.textContent = strategy;
       modifiersEl.innerHTML = Object.entries(modifiers).map(([k, v]) =>
@@ -317,8 +376,20 @@
       const detailHTML = filled.length
         ? filled.map(([k, v]) => `<div><span class="text-gray-500">${k}:</span> <span class="text-gray-200">${escapeHTML(String(v))}</span></div>`).join('')
         : '<div class="text-gray-600">(none)</div>';
+
+      // Derive structured CTA from outcome + reason — what the CRM would receive in v3
+      const cta = deriveCTA(o);
+      const ctaHTML = `
+        <div><span class="text-gray-500">action:</span> <span class="glow-green">${cta.action}</span></div>
+        ${cta.target_team ? `<div><span class="text-gray-500">team:</span> <span class="text-gray-200">${cta.target_team}</span></div>` : ''}
+        ${cta.sla_hours !== null ? `<div><span class="text-gray-500">sla:</span> <span class="glow-amber">${cta.sla_hours}h</span></div>` : ''}
+        <div><span class="text-gray-500">do_not_pressure:</span> <span class="text-gray-200">${cta.do_not_pressure}</span></div>
+        <div><span class="text-gray-500">handoff:</span> <span class="text-gray-200">${cta.handoff_recommendation}</span></div>
+        ${cta.next_call_eligible ? `<div><span class="text-gray-500">next call ok:</span> <span class="text-gray-200">${cta.next_call_eligible}</span></div>` : ''}
+      `;
+
       outcomeBody.innerHTML = `
-        <div class="space-y-2">
+        <div class="space-y-3">
           <div>
             <div class="text-gray-500 mb-1">outcome:</div>
             <div class="glow-green">${o.outcome}</div>
@@ -326,6 +397,10 @@
           <div>
             <div class="text-gray-500 mb-1">detail:</div>
             <div class="space-y-0.5">${detailHTML}</div>
+          </div>
+          <div class="pt-2 border-t border-gray-700">
+            <div class="text-gray-500 mb-1 uppercase tracking-wider text-[10px]">action for crm</div>
+            <div class="space-y-0.5">${ctaHTML}</div>
           </div>
           <div class="pt-2 border-t border-gray-700 grid grid-cols-2 gap-1 text-[11px] text-gray-400">
             <div><span class="text-gray-500">turns:</span> ${o.turns ?? '—'}</div>
@@ -338,11 +413,54 @@
       outcomePanel.classList.remove('hidden');
     }
 
+    // Derive structured CTA from outcome + reason — mirrors the v3 schema in docs/DATA_SCHEMA.md
+    function deriveCTA(outcome) {
+      const reason = outcome.outcome_detail?.reason;
+      const map = {
+        promise_to_pay:      { action: 'monitor_payment',          team: null,                 sla: 72,  pressure: false, handoff: 'continue_bot' },
+        already_paid:        { action: 'verify_payment',           team: 'reconciliation',     sla: 48,  pressure: false, handoff: 'continue_bot' },
+        callback_request:    { action: 'schedule_human_callback',  team: 'collections',        sla: 24,  pressure: false, handoff: 'route_to_human' },
+        wrong_number:        { action: 'suppress_number',          team: 'data correction',    sla: null,pressure: false, handoff: 'pause' },
+        no_answer:           { action: 'retry_per_policy',         team: null,                 sla: 2,   pressure: false, handoff: 'continue_bot' },
+        refused:             { action: 'log_and_review',           team: 'collections',        sla: 120, pressure: false, handoff: 'continue_bot' },
+        human_callback_required: { action: 'schedule_human_callback', team: 'collections', sla: 48, pressure: false, handoff: 'route_to_human' },
+      };
+      const base = map[outcome.outcome] || map.refused;
+      // Reason-specific overrides for human_callback_required
+      if (outcome.outcome === 'human_callback_required') {
+        const byReason = {
+          medical_emergency: { team: 'customer care team',  sla: 24, pressure: true,  next: '30 days' },
+          mental_distress:   { team: 'care team',           sla: 24, pressure: true,  next: '30 days' },
+          job_loss:          { team: 'hardship desk',       sla: 48, pressure: true,  next: '30 days' },
+          business_failure:  { team: 'hardship desk',       sla: 48, pressure: true,  next: '30 days' },
+          natural_disaster:  { team: 'care team',           sla: 48, pressure: true,  next: '30 days' },
+          abuse:             { team: 'senior agent (review)', sla: 48, pressure: true, next: 'pending review' },
+          deceased:          { team: 'bereavement team',    sla: 48, pressure: true,  next: 'never (account closed pending docs)' },
+          waiver:            { team: 'waivers team',        sla: 48, pressure: false, next: 'after waiver decision' },
+          dispute:           { team: 'disputes team',       sla: 48, pressure: false, next: 'after dispute resolved' },
+          language_callback: { team: 'language-specific pool', sla: 24, pressure: false, next: '7 days' },
+          dnd:               { team: null,                  sla: null, pressure: false, next: 'never (DND)' },
+        };
+        const r = byReason[reason] || {};
+        Object.assign(base, r);
+      }
+      return {
+        action: base.action,
+        target_team: base.team,
+        sla_hours: base.sla,
+        do_not_pressure: base.pressure,
+        handoff_recommendation: base.handoff,
+        next_call_eligible: base.next || null,
+      };
+    }
+
     // -------------------- start call --------------------
     startBtn.addEventListener('click', async () => {
       const personaId = personaSel.value;
       if (!personaId) return;
       chat.innerHTML = '';
+      auditBody.innerHTML = '';
+      auditTurnCounter = 0;
       addLine('system', `starting ${voiceMode ? 'voice' : 'text'} call for ${personaId}...`);
       outcomePanel.classList.add('hidden');
       startBtn.disabled = true;
@@ -396,6 +514,8 @@
           }
         } else if (data.type === 'fsm') {
           fsmIndicator.textContent = 'state: ' + data.state;
+        } else if (data.type === 'audit') {
+          appendAuditRow(data);
         } else if (data.type === 'end') {
           renderOutcome(data.payload);
           userInput.disabled = true;

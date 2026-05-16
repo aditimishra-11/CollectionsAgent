@@ -83,6 +83,12 @@ class WebCall:
         self._llm = OpenAIClient()
         self.conv = Conversation(ctx, get_user_text, say_bot_text, llm=self._llm)
         self.call_id = self.conv.call_id
+
+        # Patch the audit logger so every per-turn entry ALSO streams to the
+        # browser as an "audit" SSE event — without touching the Conversation
+        # class. This is what powers the "Bot internals" panel.
+        self._patch_audit_logger()
+
         self._thread = threading.Thread(target=self._run, daemon=True)
         self._thread.start()
         self.bot_q.put(
@@ -93,6 +99,29 @@ class WebCall:
                 "modifiers": prefilter_result.modifier_keys,
             }
         )
+
+    def _patch_audit_logger(self) -> None:
+        original = self.conv.audit.log_turn
+        bot_q = self.bot_q
+
+        def wrapped(**kwargs):
+            original(**kwargs)
+            try:
+                bot_q.put(
+                    {
+                        "type": "audit",
+                        "user_text": kwargs.get("user_text", ""),
+                        "bot_text": kwargs.get("bot_text", ""),
+                        "intent": kwargs.get("intent"),
+                        "state_before": kwargs.get("fsm_state_before"),
+                        "state_after": kwargs.get("fsm_state_after"),
+                        "validator": kwargs.get("validator_result"),
+                    }
+                )
+            except Exception:
+                pass  # never let audit instrumentation break the call
+
+        self.conv.audit.log_turn = wrapped  # type: ignore[assignment]
 
     def _run(self) -> None:
         try:
