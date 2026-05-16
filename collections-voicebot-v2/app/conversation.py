@@ -477,11 +477,25 @@ class Conversation:
             # Layer 1: move-ladder enforcement
             move, ladder_exhausted = self._fsm.next_move()
             if ladder_exhausted:
+                # When the ladder is exhausted, the FSM authorises the close.
+                # Previously the directive told the LLM "end with [END_CALL] if
+                # they decline" — but the FSM didn't set terminal_outcome, so the
+                # END_CALL guard stripped the LLM's close attempt and the call
+                # looped indefinitely (the user's P06 transcript: 22 turns).
+                # The principle: ladder exhausted means the bot has played
+                # every move it can; the customer has not converged; further
+                # turns add nothing. FSM is done.
+                if not self._terminal_outcome:
+                    self._terminal_outcome = "refused"
+                    self._terminal_reason = "ladder_exhausted_no_capture"
+                    directives_fired.append("fsm:terminal_authorised_via_ladder_exhausted")
                 turn_directive = (
                     (turn_directive + "\n\n" if turn_directive else "")
-                    + "LADDER EXHAUSTED: you have already tried every move in this state. "
-                    "Acknowledge briefly, offer ONE final callback ('would tomorrow work?'), "
-                    "and end with [END_CALL] if they decline."
+                    + "LADDER EXHAUSTED: you have tried every move in this state and the "
+                    "customer has not converged. This turn: acknowledge briefly, optionally "
+                    "offer ONE final callback if you haven't already, and set "
+                    "[END_CALL: true]. The system has authorised the close — your "
+                    "[END_CALL: true] WILL be honoured. No more questions, no follow-ups."
                 )
                 directives_fired.append("ladder:exhausted")
             elif move is not None:
