@@ -95,13 +95,13 @@
           <button data-filter="history" data-value="occasional" class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">occasional</button>
           <button data-filter="history" data-value="frequent" class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">frequent</button>
         </div>
-        <div class="flex items-center gap-1.5">
-          <span class="text-gray-500 uppercase tracking-wider">scenario:</span>
-          <button data-filter="scenario" data-value="all" class="filter-chip chip-active px-2 py-0.5 rounded border border-gray-600 hover:bg-gray-800">all</button>
-          <button data-filter="scenario" data-value="ptp" class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">payment</button>
-          <button data-filter="scenario" data-value="hardship" class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">hardship</button>
-          <button data-filter="scenario" data-value="adversarial" class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">adversarial</button>
-          <button data-filter="scenario" data-value="language" class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">language</button>
+        <div class="flex items-center gap-1.5" title="What part of the bot do you want to test?">
+          <span class="text-gray-500 uppercase tracking-wider">tests:</span>
+          <button data-filter="scenario" data-value="all"         title="every persona" class="filter-chip chip-active px-2 py-0.5 rounded border border-gray-600 hover:bg-gray-800">all</button>
+          <button data-filter="scenario" data-value="ptp"         title="standard payment-promise call — the typical 'I forgot, I'll pay tomorrow' flow. Tests tone, PTP capture, and confirmation." class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">PTP capture</button>
+          <button data-filter="scenario" data-value="hardship"    title="real distress (job loss, hospital, business shutdown). Tests empathy, hardship probe, and human-handoff routing." class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">hardship handoff</button>
+          <button data-filter="scenario" data-value="adversarial" title="hostile, scam-claim, prompt-injection, DND assertion, wrong-number, third-party answering. Tests the compliance safety net." class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">compliance edge cases</button>
+          <button data-filter="scenario" data-value="language"    title="customer speaks Hindi / Tamil / Malayalam. Tests language detection and graceful handoff." class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">language handoff</button>
         </div>
       </div>
 

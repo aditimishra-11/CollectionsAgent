@@ -256,7 +256,24 @@ class Conversation:
                     f"Validator blocked LLM output (violations={validation.violations}). Substituted fallback."
                 )
 
-            ends_now = END_SENTINEL in bot_text
+            # [END_CALL] guard — the FSM owns when the call ends. The LLM is
+            # allowed to REQUEST a close via [END_CALL], but it's only honoured
+            # when the FSM authorised it for this turn (terminal_outcome set or
+            # state already terminal-flavoured). Otherwise we strip the sentinel
+            # and continue — the LLM's wording itself was already validated.
+            llm_requested_end = END_SENTINEL in bot_text
+            fsm_authorised_end = (
+                decision.terminal_outcome is not None
+                or decision.next_state in {"TERMINAL", "REFUSAL_CLOSE", "DND_ACKNOWLEDGED", "CALLBACK_CLOSE"}
+            )
+            if llm_requested_end and not fsm_authorised_end:
+                logger.warning(
+                    f"LLM emitted [END_CALL] without FSM authorisation in state={state_after} "
+                    f"(intent={intent.intent}). Stripping sentinel and continuing."
+                )
+                ends_now = False
+            else:
+                ends_now = llm_requested_end
             bot_text_clean = bot_text.replace(END_SENTINEL, "").strip()
 
             self._emit_bot_turn(

@@ -123,6 +123,35 @@ OTHER_CUSTOMER = [
     re.compile(r"\b(rohan|aman|priya|vikram|suresh|deepak|anjali|karthik|ramesh|sunita|arjun|meera|sanjay)\s+(mehta|sharma|verma|kapoor|iyer|patil|joshi|reddy|nair|gupta|bhatia|khanna|pillai|desai)\b.*\b(outstanding|balance|due)\b", re.I),
 ]
 
+# N. Commitment overreach — phrases the LLM has no authority to promise.
+# Same logic as the no-balance-without-OTP rule (Rule A): the bot cannot
+# reveal what it does not control, AND cannot promise what it does not
+# control. Future-contact, fee reversal, refund, and personalised manager
+# callbacks are routing decisions owned by the bank's CRM / human team —
+# not by an LLM utterance in a 90-second call.
+#
+# Even DND_ACKNOWLEDGED is not allowed to say "we won't call again",
+# because collections calls continue under RBI Fair Practices Code
+# regardless of TRAI DND (DND suppresses marketing, not legitimate dues).
+# The bot can log a preference; it cannot suspend the collections queue.
+COMMITMENT_OVERREACH = [
+    # No-future-contact — the one that triggered this rule
+    re.compile(r"\bwe\s+will\s+not\s+(call|contact)\s+you\s+(again|further|anymore)\b", re.I),
+    re.compile(r"\bwe\s+won'?t\s+(call|contact)\s+you\s+(again|anymore|further)\b", re.I),
+    re.compile(r"\bwill\s+not\s+(call|contact|reach\s+out\s+to)\s+you\b", re.I),
+    re.compile(r"\byou\s+won'?t\s+hear\s+from\s+us\b", re.I),
+    re.compile(r"\b(your\s+number\s+has\s+been|i'?ve|we'?ve)\s+(removed|suppressed|deleted|taken\s+off)\b", re.I),
+    re.compile(r"\b(removed|suppressed)\s+(your\s+)?number\b", re.I),
+    re.compile(r"\bno\s+further\s+(calls|contact)\s+from\s+(us|the\s+bank)\b", re.I),
+    # Personalised-callback overreach (bot doesn't control routing)
+    re.compile(r"\b(a\s+)?(senior\s+)?manager\s+will\s+(personally\s+)?call\s+you\b", re.I),
+    re.compile(r"\bi\s+will\s+(personally\s+)?call\s+you\s+back\b", re.I),
+    # Refund / reversal overreach
+    re.compile(r"\b(i'?ll|we'?ll|i\s+will|we\s+will)\s+(reverse|refund|cancel)\s+(the\s+|that\s+)?(\w+\s+){0,2}(charge|fee|amount|transaction)\b", re.I),
+    re.compile(r"\byou'?ll\s+get\s+a\s+refund\b", re.I),
+    re.compile(r"\bthe\s+(\w+\s+){0,2}(fee|charge)\s+(is|has\s+been|will\s+be)\s+(reversed|refunded|cancelled|waived)\b", re.I),
+]
+
 # M. Off-topic engagement (bot answered the off-topic instead of deflecting)
 OFF_TOPIC_ENGAGEMENT = [
     re.compile(r"\bweather\s+(in|today|tomorrow|is)\b", re.I),
@@ -179,6 +208,7 @@ def validate_response(text: str, fsm_state: str) -> ValidationResult:
     check("role_break_or_prompt_leak", ROLE_BREAK)
     check("other_customer_disclosure", OTHER_CUSTOMER)
     check("off_topic_engagement", OFF_TOPIC_ENGAGEMENT)
+    check("commitment_overreach", COMMITMENT_OVERREACH)
 
     return ValidationResult(passed=not violations, violations=violations, evidence=evidence)
 
@@ -196,7 +226,7 @@ FALLBACKS: dict[str, str] = {
     "OUT_OF_SCOPE_DEFLECT": "I'm only able to help with your card payment today. Is there anything about that I can sort out for you?",
     "HARDSHIP_PROBE": "I hear you. Is everything alright at your end? We'd rather understand and help.",
     "THIRD_PARTY": "Apologies — this is from Mumbai Bank about a personal account matter. When would be a good time to reach them?",
-    "DND_ACKNOWLEDGED": "Understood, I'll make sure your preference is logged. Apologies for the call today.",
+    "DND_ACKNOWLEDGED": "Understood — I'll log your preference. For anything on your card, the Mumbai Bank helpline and app are open whenever you need. Take care.",
     "REFUSAL_CLOSE": "Got it, I'll let you go. Whenever you're ready to sort this out, the Mumbai Bank app or helpline is open. Take care.",
     "LEGITIMACY_REASSURE": "That's a fair question. I'm an automated agent calling from Mumbai Bank. Please call our helpline directly if you'd like to verify.",
 }

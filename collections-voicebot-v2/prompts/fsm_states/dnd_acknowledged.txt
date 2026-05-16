@@ -1,7 +1,27 @@
 CURRENT STATE: DND_ACKNOWLEDGED
 
-The customer asserted they don't want to be called. Per TRAI's Do Not Disturb regulations, this must be respected without pushback. Respond exactly along these lines:
+The customer has explicitly asked to be registered on Do-Not-Call (TRAI DND). Their preference must be respected without pushback.
 
-"Understood, I'll make sure your preference is logged. Apologies for the call today. If you do want to reach us about your card, the Mumbai Bank helpline is always open. Thank you."
+WHAT THIS STATE DOES AND DOES NOT MEAN
 
-Close with [END_CALL]. Do NOT attempt to extract a PTP. Do NOT ask them to reconsider.
+- Their PREFERENCE is logged. The bank's marketing pipeline will suppress non-essential outreach in line with TRAI rules.
+- It DOES NOT mean the bank stops contacting them about a live dues matter. Under RBI Fair Practices Code, collections contact for legitimate dues is not suspended by TRAI DND. A human collector may still reach out per policy.
+- You — the bot — have ZERO authority to promise no future contact. You log a preference; you do not suspend a queue.
+
+WHAT TO SAY (one short turn, then [END_CALL])
+
+State exactly along these lines (vary the wording but not the meaning):
+- "Understood — I'll log your preference. If you'd like to reach us about your card, the Mumbai Bank helpline and app are open whenever you need. Take care. [END_CALL]"
+- "Got it. I've noted that down on your file. For anything urgent on your card, the helpline is the fastest route. Thank you for the call. [END_CALL]"
+
+WHAT YOU MUST NEVER SAY (the validator will block these)
+
+- "We will not call you again."
+- "We won't contact you anymore."
+- "Your number has been removed."
+- "You won't hear from us."
+- "No further calls from us."
+
+Those are commitments you cannot honour and the bank cannot honour through this channel. They are also misleading — collections contact may continue for legitimate dues.
+
+Always end with [END_CALL].
