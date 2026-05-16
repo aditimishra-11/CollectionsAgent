@@ -47,21 +47,33 @@ Real collections needs a **per-customer cycle state machine** that lives in the 
 
 The orchestrator drives next-action decisions; the bot only emits the outcome. Default rules below; admin can tune per bank policy.
 
-| Outcome | Next action | Cooldown before next bot call | Max bot attempts |
+> **NEW (Layer 2 + 3):** Refusal is now two distinct outcomes, and segment policy can upgrade a `refused` into a `human_callback_required` automatically. The orchestrator should read `outcome_detail.handoff` and `outcome_detail.callback_sla_hours` directly — they're populated by `app/policy.py`. Don't re-derive routing from the outcome string alone, or you'll misroute high-risk segments.
+
+| Outcome (+ reason) | Next action | Cooldown before next bot call | Max bot attempts |
 |---|---|---|---|
 | `promise_to_pay` | Wait until PTP date + 3-day grace | Until grace expires | (Counts as committed; if broken → Call 2 / Call 3 same rules) |
 | `already_paid` | Verify in bank ledger within 2 working days | Don't call again unless reconciliation fails | n/a |
 | `callback_request` | Schedule call at customer's preferred time | Honour the preferred time | n/a (this IS the call schedule) |
 | `human_callback_required` (waiver) | Route to waivers team; bot suspended for this case | 2 working days | Bot does not call again for this issue |
 | `human_callback_required` (dispute) | Route to disputes team; bot suspended | 2 working days | Same |
-| `human_callback_required` (medical / job_loss / business / mental / disaster) | Route to hardship desk; bot suspended for 30 days; case marked do_not_pressure | 30 days minimum | None until hardship team clears |
+| `human_callback_required` (medical_emergency / job_loss / business_failure / mental_distress / natural_disaster) | Route to hardship desk; bot suspended for 30 days; case marked do_not_pressure | 30 days minimum | None until hardship team clears |
 | `human_callback_required` (deceased) | Route to bereavement team; bot permanently suspended for account | Forever | None |
 | `human_callback_required` (abuse) | Route to senior agent; bot suspended pending review | 48h hold | Decision case-by-case |
 | `human_callback_required` (language_callback) | Route to language-specific queue | 1 working day | Bot resumes if requested language unavailable and customer reverts |
-| `refused` (no DND) | 5-day cooldown, then Call 2 with different opener | 5 days | Per max-attempts rule |
-| `refused` (DND asserted) | TRAI rule: stop all bot calls; case to manual review | Permanent | None |
+| `human_callback_required` (refused_current_call_high_risk) **[NEW — Layer 2]** | Refusal in a frequent-late or sub-prime-frequent segment. Policy `human_takeover_on_refuse=True` upgraded `refused` to this. Route to senior agent. | Per `outcome_detail.callback_sla_hours` (typically 24h) | Bot does not call again this cycle for this issue |
+| `refused` (reason=`refused_current_call`) **[NEW — Layer 3]** | In-the-moment refusal of THIS call. **Not** TRAI DND. Cooldown then Call 2 with a different opener. | Per `outcome_detail.callback_sla_hours` (24–72h based on segment) | Per max-attempts rule |
+| `refused` (reason=`dnd`) | TRAI DND asserted. Stop MARKETING-eligible outreach; case to manual review. Legitimate collections contact may continue per RBI Fair Practices Code (DND suppresses marketing, not dues recovery). | Permanent for marketing; collections routed to human only | None for bot |
 | `wrong_number` | Suppress number for this customer; route to data correction | Permanent (for that number) | None until number updated |
 | `no_answer` | Retry per dialler policy (2h, 6h, next day) | Per policy, max 3 retries/day, 5/cycle | n/a (counted differently) |
+
+### Why split `refused` two ways?
+
+Before Layer 3, every refusal — "I don't want to talk right now" or "register me on DND" — collapsed to `refused/dnd`, then the customer was excluded from all future bot contact. That's wrong on two counts:
+
+1. **The bot has no authority to promise no future contact.** Per RBI Fair Practices Code, legitimate dues collection is not suspended by TRAI DND. A human collector still calls.
+2. **In-the-moment refusal isn't a permanent suppression signal.** A customer frustrated by a 3-minute call has not registered for DND. They've said "not now." The orchestrator should retry per cooling-off policy.
+
+The validator (`app/validator.py::COMMITMENT_OVERREACH`) blocks the bot from ever phrasing a refusal close as "we won't call you again" — even in DND state — because the bot does not control the collections queue.
 
 ## When human takeover is mandatory (not optional)
 
@@ -142,14 +154,23 @@ This separation matters: if the bot's training data or model changes, it cannot 
 
 ## What changes in the bot's code to support this
 
-Additive only, no destructive changes:
+Additive only, no destructive changes.
 
-1. **`app/conversation.py`**: accept a `call_history_block` parameter, inject it as a 5th prompt part
-2. **`app/prompt_builder.py`**: add `assemble_with_history` method, or append history block to the existing assembly
-3. **`app/main.py`**: CLI flag `--prior-calls path/to/history.json` for demoing repeat-call behaviour
-4. **`app/outcome/extractor.py`**: produce `agent_brief` field (1–2 sentence summary for the human picking up)
-5. **`app/outcome/schema.py`**: add `callback_sla_hours`, `urgency`, `agent_brief`, `do_not_pressure`, `handoff_recommendation` fields
-6. **`app/web.py`** + frontend: pass through new outcome fields to the dashboard
+**Done already (commits 92a1daa … ac917d8):**
+
+- ✅ `app/policy.py` — SegmentPolicy resolved per call; drives `human_takeover_on_refuse`, `max_ptp_days`, `abuse_strikes_allowed`, `callback_sla_hours`.
+- ✅ `app/outcome/schema.py` — `handoff`, `callback_sla_hours`, `policy_rationale` fields added to `OutcomeDetail`.
+- ✅ `app/conversation.py::_apply_policy_to_outcome` — stamps policy-driven routing onto every outcome before posting.
+- ✅ `app/fsm.py` — new `REFUSAL_CLOSE` state + two-strike `refuse_current_call` intent; abuse strikes read from policy.
+- ✅ `app/web.py` + frontend — bot internals panel shows `move_played`, `directives_fired`, `scenario_inferred` per turn; outcome panel surfaces `handoff` and `policy_rationale`.
+
+**Still TODO for full multi-call support:**
+
+1. `app/conversation.py` — accept a `call_history_block` parameter, inject it as a 5th prompt part.
+2. `app/prompt_builder.py` — add `assemble_with_history` method (or append history block to existing assembly).
+3. `app/main.py` — CLI flag `--prior-calls path/to/history.json` for demoing repeat-call behaviour.
+4. `app/outcome/extractor.py` — produce `agent_brief` field (1–2 sentence summary for the human picking up).
+5. Orchestrator (CRM side, not in this repo) — read `outcome.outcome_detail.handoff` directly; don't re-derive from `outcome` string alone.
 
 None of these touch the FSM, validator, or compliance rules. The bot's behaviour stays exactly the same per-call; orchestration adds context.
 
