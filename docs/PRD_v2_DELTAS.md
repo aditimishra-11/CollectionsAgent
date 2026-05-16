@@ -104,15 +104,40 @@ Adding a separate operator north star would dilute the bank-level focus. Keep it
 
 ## Does the bot's core workflow / prompts need changes? — direct answer
 
-**Yes, in three additive places (no destructive changes):**
+**Four structural changes have shipped beyond what the original PRD specified.** Each one moved a behavioural rule out of prose and into deterministic code, on the same principle the PRD anchored on (compliance lives in code, the LLM is the last line of defence — not the only one).
+
+### §7 Bot core behaviour deltas (NEW — shipped in v2)
+
+| Δ | What the original PRD assumed | What v2 actually does | Why the change |
+|---|---|---|---|
+| **§7.1** Refusal handling | One outcome: `refused`. Conflated TRAI DND with in-call refusal. | Split into `refused/dnd` (permanent marketing suppression; collections may continue per RBI FPC) and `refused/refused_current_call` (retry after cooling-off). Two-strike state machine. | Customer who said "leave me alone" was being permanently DND-suppressed, which is regulatorily wrong AND lost them as a future contact opportunity. |
+| **§7.2** Segment policy in code, not prose | Tone-by-segment via prompt modifiers only. Thresholds (PTP horizon, abuse strikes, when to escalate to human) were prose nudges in prompts. | `app/policy.py` resolves a `SegmentPolicy` per call. Numbers (`max_ptp_days`, `abuse_strikes_allowed`, `callback_sla_hours`, `human_takeover_on_refuse`) are deterministic code. | LLM was confirming "I'll pay in 2 months" from frequent-late defaulters because nothing in code pushed back. Policy table now does. |
+| **§7.3** Move ladder per state | LLM generated freely within FSM state. No per-turn move discipline. | Each state has an ordered ladder of "moves" (`ASK_DATE` → `ASK_MODE` → `CONFIRM_PTP` → `OFFER_APP_LINK` → `OFFER_PARTIAL` → `OFFER_CALLBACK`). LLM is told which move to play; it cannot replay a move in the same state; ladder exhaustion forces graceful close. | Bot was looping on "when will you pay / when will you pay" because nothing in code tracked what had already been asked. |
+| **§7.4** Commitment overreach validator | Validator caught policy violations (balance disclosure, threats, waivers). Did not police implicit commitments. | New `COMMITMENT_OVERREACH` rule blocks "we won't call you again", "I'll personally call you back", "we'll reverse the fee" etc. — even from DND_ACKNOWLEDGED state. | Bot was promising "we will not call you again" while the structured outcome routed to `continue_bot, sla 72h` — direct contract mismatch with the orchestrator and an RBI FPC violation in production. |
+| **§7.5** `[END_CALL]` guard | LLM emitting `[END_CALL]` unconditionally terminated the call. | FSM owns when the call ends. LLM may REQUEST close via `[END_CALL]`; it's only honoured when `decision.terminal_outcome` is set or the state is terminal-flavoured. | LLM was self-closing on hostility cues even when the FSM said "stay, calm reset." |
+| **§7.6** Bot-internals panel | Audit panel showed state + intent + validator. | Added `scenario_inferred` (behavioural category, discovered mid-call from intent), `move_played` (which ladder move was forced), `directives_fired[]` (every deterministic guardrail tagged by layer prefix). | Compliance and Ops needed live explainability — not just "the validator passed" but "this turn was a hardship-category turn, the FSM forced the empathy probe, the policy directive on PTP horizon also fired." |
+
+### Still-additive items (v3 scope)
 
 | Change | Files affected | Existing behaviour preserved? |
 |---|---|---|
 | Add Part 5 to assembled prompt: Call History Block | `prompt_builder.py`, `conversation.py` | Yes — empty block on Call 1 means no change to current behaviour |
 | FSM becomes attempt-aware (opener variation; stricter routing after broken PTPs) | `fsm.py`, `prompts/fsm_states/intro.txt` | Yes — default attempt-1 behaviour unchanged |
-| Outcome extractor produces CTA + agent_brief + handoff_recommendation | `outcome/extractor.py`, `outcome/schema.py` | Yes — additive fields; older CRM integrations ignore them |
+| Outcome extractor produces `agent_brief` | `outcome/extractor.py`, `outcome/schema.py` | Yes — additive field |
 
-These are additive. The current 42-scenario eval baseline remains valid. v3 work would add ~10 new scenarios specifically testing repeat-call behaviour (Attempt 2 with a broken PTP, Attempt 3 with no history, hardship-after-second-attempt, etc.).
+These are additive. The current 42-scenario eval baseline remains valid; v3 work would add ~10 new scenarios specifically testing repeat-call behaviour (Attempt 2 with a broken PTP, Attempt 3 with no history, hardship-after-second-attempt, etc.).
+
+### Persona coverage: segment-matrix audit (NEW)
+
+The demo persona set (`eval/personas.csv`) was audited against the PRD's three pre-call segment axes (tier × DPD × default_history). Five empty cells were filled in commit `e7e7de7` (total 32 → 37 personas):
+
+- **P33** Ritika Bhatt (spark / DPD 26 / first) — first-miss spark drifting late.
+- **P34** Manoj Pandey (spark / DPD 28 / frequent) — strictest segment policy: 7-day cap, 1 abuse strike, 24h SLA, mandatory takeover.
+- **P35** Rajat Malhotra (apex / DPD 14 / first) — premium customer slipping into mid-DPD.
+- **P36** Kavita Iyengar (apex / DPD 9 / frequent) — affluent habitual defaulter; nearprime so not pre-filter-blocked.
+- **P37** Vinod Yadav (spark / DPD 8 / frequent) — chronic low-DPD spark; A_reminder tone vs frequent modifier.
+
+The earlier "scenario" filter on the demo picker (`PTP` / `hardship` / `adversarial` / `language`) was dropped — those are *behavioural* categories the bot discovers mid-call via the intent classifier, not pre-call attributes a reviewer should select. The taxonomy is preserved in the eval (`eval/scenarios.yaml`) where it belongs.
 
 ## Priority for the next 2 weeks (v3 scope)
 

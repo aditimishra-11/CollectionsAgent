@@ -25,6 +25,8 @@ Reference docs in the root (`AI PM Assignment.pdf`, `AI PM PRD.docx`, `Voicebot_
 
 Across **42 scenarios** including 11 adversarial stress tests (prompt injection, RBI authority claims, lawyer threats, harassment, deceased pretext, language requests).
 
+> **Note:** the numbers above are the eval result from before the four structural layers landed (move ladder, segment policy, refuse/DND split, commitment validator). A re-run after those changes is the definition-of-done for the next eval pass — expect movement on full-QA-pass and zero-violation rates, possibly with 1–2 regressions to chase.
+
 See `collections-voicebot-v2/eval/README.md` for the full eval methodology and `collections-voicebot-v2/eval/results_v2.csv` for per-scenario rows.
 
 ## Stack
@@ -78,10 +80,16 @@ python -m eval.runner --version v1
 4. **NEVER list grounded in actual regulations.** RBI Fair Practices Code for Recovery Agents, RBI Master Direction on Credit Cards 2022, DPDP Act 2023, TRAI DND.
 5. **Segment-aware prompting, fan-out by composition.** 3 strategies × 6 modifier dimensions, assembled fresh each turn. Spark gets instructive, Edge gets efficient, Apex gets concierge.
 6. **No live SIP transfer.** Escalation = pre-scripted close + structured outcome to CRM; human calls back. Architecture-doc decision, kept.
-7. **Two-strike abuse rule with multi-insult fast-close.**
+7. **Two-strike abuse rule with multi-insult fast-close.** Strike threshold reads from the segment policy (frequent-late defaulters get one strike, others get two).
 8. **Identity-first opener for non-Apex.** Bot asks for the named customer before saying "credit card" — closes the third-party disclosure gap.
 9. **No PTP-capture-rate as a primary metric.** Easy to inflate under pressure (PRD anti-goal). PTP specificity (date + mode captured) is the proxy for PTP Kept Rate.
 10. **Eval reframed for PMs/bankers.** Four blocks: Can it ship? Did it work? How did it feel? Was it fast? Each metric mapped to the production outcome it predicts.
+11. **Refusal is two outcomes, not one.** `refused/dnd` = TRAI DND (permanent marketing suppression; collections may continue per RBI FPC). `refused/refused_current_call` = in-call refusal, retry allowed after cooling-off. Misclassifying these has regulatory blast radius — the customer was being permanently DND-suppressed for saying "leave me alone."
+12. **Segment policy is a table of numbers, not a prompt nudge.** `app/policy.py` resolves a `SegmentPolicy` per call: `max_ptp_days`, `abuse_strikes_allowed`, `human_takeover_on_refuse`, `callback_sla_hours`. The LLM does the wording; the FSM enforces the numbers.
+13. **Move ladder per state — the bot cannot replay a question.** Each state has an ordered list of "moves" (`ASK_DATE` → `ASK_MODE` → `CONFIRM_PTP` → `OFFER_APP_LINK` → `OFFER_PARTIAL` → `OFFER_CALLBACK`). The FSM injects the next unplayed move; LLM tags its reply with `[MOVE: X]`. Ladder exhaustion forces a graceful close. Kills the "when will you pay / when will you pay" loop structurally.
+14. **Commitment-overreach validator.** Blocks the bot from saying what it cannot honour — "we won't call you again", "I'll personally call you back tomorrow", "we'll reverse the late fee" — even in DND state. Same principle as the balance rule: the bot cannot promise what it does not control.
+15. **FSM owns when the call ends.** LLM may *request* a close via `[END_CALL]`, but it's only honoured when the FSM authorised the close. Stops the LLM from self-terminating on hostility cues when the FSM said "stay, calm reset."
+16. **Bot-internals panel surfaces every guardrail per turn.** Each audit row shows the scenario class (discovered mid-call from intent), the ladder move played, and a colour-coded chip for every deterministic directive that fired (`policy:`, `ladder:`, `fsm:`, `validator:`, `guard:`). Compliance can grep on it; Ops can demo it.
 
 ## Stress-test coverage
 
