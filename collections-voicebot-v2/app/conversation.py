@@ -42,6 +42,33 @@ END_SENTINEL = "[END_CALL]"
 MAX_TURNS = 16
 
 
+# Map FSM decision notes to a concrete per-turn directive the LLM must honour.
+# Keeps the FSM emitting symbolic tags (which the audit/logs can match on) while
+# the LLM receives prose. Extend this dict as new notes are introduced.
+_DIRECTIVE_BY_NOTE_PREFIX: dict[str, str] = {
+    "refuse_current_call_first_strike": (
+        "The customer has just refused to continue this call (frustration, not regulatory DND). "
+        "DO NOT push for a payment date or amount. DO NOT ask another scheduling question. "
+        "Acknowledge their frustration in ONE short sentence, then offer exactly ONE callback "
+        "option: 'Would tomorrow morning, afternoon, or evening work better for a quick callback?' "
+        "If they decline that too, the system will close the call — you do not need to."
+    ),
+    "abuse_first_strike": (
+        "The customer just used hostile language. This is strike one — stay calm, do not "
+        "match the tone. One short, professional reset, then return to the conversation."
+    ),
+}
+
+
+def _directive_from_notes(notes: str) -> str | None:
+    if not notes:
+        return None
+    for prefix, directive in _DIRECTIVE_BY_NOTE_PREFIX.items():
+        if notes.startswith(prefix):
+            return directive
+    return None
+
+
 @dataclass
 class ConversationResult:
     call_id: str
@@ -162,7 +189,8 @@ class Conversation:
                 break
 
             # Slow path → LLM generates within FSM constraints
-            bot_text_raw = self._llm_reply()
+            turn_directive = _directive_from_notes(decision.notes)
+            bot_text_raw = self._llm_reply(turn_directive=turn_directive)
             validation = validate_response(bot_text_raw, state_after)
 
             if validation.passed:
@@ -199,9 +227,11 @@ class Conversation:
 
     # --------------------------------------------------------- helpers
 
-    def _llm_reply(self) -> str:
+    def _llm_reply(self, turn_directive: str | None = None) -> str:
         assert self._call_parts is not None and self._fsm is not None
-        system_prompt = self._prompt_builder.assemble(self._call_parts, self._fsm.state)
+        system_prompt = self._prompt_builder.assemble(
+            self._call_parts, self._fsm.state, turn_directive=turn_directive
+        )
         t0 = time.time()
         reply = self._llm.reply(
             system_prompt=system_prompt,

@@ -28,7 +28,8 @@ State = Literal[
     "OUT_OF_SCOPE_DEFLECT",  # new: prompt injection, off-topic, role-break, third-party
     "HARDSHIP_PROBE",
     "THIRD_PARTY",
-    "DND_ACKNOWLEDGED",
+    "DND_ACKNOWLEDGED",         # regulatory DND — explicit "do not call" — locks future contact
+    "REFUSAL_CLOSE",            # in-the-moment refusal — closes this call, future contact allowed
     "LEGITIMACY_REASSURE",
     "CALLBACK_CLOSE",  # fast path — no LLM, plays a pre-scripted close
     "TERMINAL",  # call has ended
@@ -68,6 +69,10 @@ class FSMContext:
     turn_count: int = 0
     abuse_strikes: int = 0
     hardship_probed_already: bool = False
+    # Tracks in-call refusal pressure WITHOUT promoting to regulatory DND.
+    # First strike: stay slow-path, let the LLM acknowledge + offer ONE callback.
+    # Second strike: terminal REFUSAL_CLOSE (outcome=refused, reason=refused_current_call).
+    refuse_current_call_strikes: int = 0
 
 
 @dataclass
@@ -106,6 +111,28 @@ class FSM:
                 is_fast_path=False,
                 terminal_outcome="refused",
                 terminal_reason="dnd",
+            )
+
+        if intent == "refuse_current_call":
+            # Two-strike: first frustrated refusal gets ONE callback offer,
+            # second closes the call without burning future-contact rights.
+            self.context.refuse_current_call_strikes += 1
+            if self.context.refuse_current_call_strikes >= 2:
+                self.state = "REFUSAL_CLOSE"
+                return FSMDecision(
+                    next_state="REFUSAL_CLOSE",
+                    is_fast_path=False,
+                    terminal_outcome="refused",
+                    terminal_reason="refused_current_call",
+                    notes="refuse_current_call_second_strike — closing without DND lock",
+                )
+            # First strike — stay in current conversational state but signal
+            # the LLM via the next-turn prompt that it should offer one callback
+            # and stop pushing payment. (Move-ladder enforcement comes in Layer 1.)
+            return FSMDecision(
+                next_state=self.state,
+                is_fast_path=False,
+                notes="refuse_current_call_first_strike — offer callback, no payment push",
             )
 
         if intent == "wrong_number":

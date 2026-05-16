@@ -197,6 +197,7 @@ FALLBACKS: dict[str, str] = {
     "HARDSHIP_PROBE": "I hear you. Is everything alright at your end? We'd rather understand and help.",
     "THIRD_PARTY": "Apologies — this is from Mumbai Bank about a personal account matter. When would be a good time to reach them?",
     "DND_ACKNOWLEDGED": "Understood, I'll make sure your preference is logged. Apologies for the call today.",
+    "REFUSAL_CLOSE": "Got it, I'll let you go. Whenever you're ready to sort this out, the Mumbai Bank app or helpline is open. Take care.",
     "LEGITIMACY_REASSURE": "That's a fair question. I'm an automated agent calling from Mumbai Bank. Please call our helpline directly if you'd like to verify.",
 }
 

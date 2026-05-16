@@ -169,13 +169,36 @@ _INTENTS: list[tuple[str, IntentPath, list[re.Pattern]]] = [
         ],
     ),
     (
+        # Regulatory DND — caller is asking to be registered as do-not-call,
+        # NOT just refusing this call. These are the explicit, repeatable phrases.
+        # Must stay BEFORE refuse_current_call so the strong intent wins on overlap.
         "do_not_call",
         "slow",
         [
             re.compile(r"\b(dnd|do\s+not\s+disturb|do\s+not\s+call)\b", re.I),
-            re.compile(r"\b(stop|don'?t)\s+call(ing)?\s+me\b", re.I),
-            re.compile(r"\bmujhe\s+call\s+(mat|nahi)\s+karo\b", re.I),
-            re.compile(r"\bphone\s+mat\s+karo\b", re.I),
+            re.compile(r"\b(stop|don'?t)\s+call(ing)?\s+me\s+(again|ever|anymore|in\s+future)\b", re.I),
+            re.compile(r"\bnever\s+call\s+me\b", re.I),
+            re.compile(r"\bmujhe\s+call\s+(mat|nahi)\s+karna|kabhi\s+mat\s+karo\b", re.I),
+            re.compile(r"\bphone\s+mat\s+karna\s+(dobara|wapas|kabhi)\b", re.I),
+            re.compile(r"\bremove\s+(my\s+)?number\b", re.I),
+            re.compile(r"\bregister\s+(me\s+)?(on\s+)?dnd\b", re.I),
+        ],
+    ),
+    (
+        # In-the-moment refusal of THIS call — frustrated, "not now", "leave me alone".
+        # Does NOT block future contact. Different terminal outcome from do_not_call.
+        "refuse_current_call",
+        "slow",
+        [
+            re.compile(r"\bdon'?t\s+want\s+to\s+(talk|speak|deal)\b", re.I),
+            re.compile(r"\b(not|don'?t)\s+(want|wanna)\s+to\s+(talk|speak)\b", re.I),
+            re.compile(r"\bleave\s+me\s+alone\b", re.I),
+            re.compile(r"\bwhy\s+are\s+you\s+(bugging|bothering|harassing|pestering)\b", re.I),
+            re.compile(r"\bstop\s+(bugging|bothering|calling\s+now)\b", re.I),
+            re.compile(r"\bmujhe\s+(baat|baat\s+nahi)\s+karni\b", re.I),
+            re.compile(r"\babhi\s+(baat\s+)?nahi\s+karni\b", re.I),
+            re.compile(r"\bpareshaan\s+(mat\s+karo|nahi\s+karo)\b", re.I),
+            re.compile(r"\bnot\s+interested\b", re.I),
         ],
     ),
     (

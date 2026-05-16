@@ -102,7 +102,12 @@ class PromptBuilder:
             customer_context=customer_ctx,
         )
 
-    def assemble(self, parts: PromptParts, fsm_state: str) -> str:
+    def assemble(self, parts: PromptParts, fsm_state: str, turn_directive: str | None = None) -> str:
+        """Assemble the system prompt. ``turn_directive`` is an optional, deterministic
+        per-turn instruction injected by the FSM (e.g., "customer just refused —
+        offer ONE callback and stop pushing payment"). It overrides nothing, but
+        sits at the bottom so it's the freshest instruction the LLM reads.
+        """
         fsm_text = self._fsm_states.get(fsm_state.upper(), "")
         modifier_text = "\n\n".join(parts.modifiers.values())
         sections = [
@@ -122,6 +127,13 @@ class PromptBuilder:
             "=" * 60,
             parts.customer_context,
         ]
+        if turn_directive:
+            sections.extend([
+                "=" * 60,
+                "THIS TURN — FSM OVERRIDE (highest priority)",
+                "=" * 60,
+                turn_directive,
+            ])
         return "\n\n".join(s for s in sections if s)
 
     def get_close_template(self, key: str) -> str:
