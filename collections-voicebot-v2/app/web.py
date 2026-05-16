@@ -116,6 +116,10 @@ class WebCall:
                         "state_before": kwargs.get("fsm_state_before"),
                         "state_after": kwargs.get("fsm_state_after"),
                         "validator": kwargs.get("validator_result"),
+                        # Layer 1 / 2 / 3 explainability — surfaced in the bot-internals panel
+                        "move_played": kwargs.get("move_played"),
+                        "directives_fired": kwargs.get("directives_fired") or [],
+                        "scenario_inferred": kwargs.get("scenario_inferred"),
                     }
                 )
             except Exception:

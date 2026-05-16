@@ -35,6 +35,10 @@ class AuditLogger:
         stt_latency_ms: int | None = None,
         llm_latency_ms: int | None = None,
         tts_latency_ms: int | None = None,
+        # v2-extra: explainability for the bot-internals panel
+        move_played: str | None = None,
+        directives_fired: list[str] | None = None,
+        scenario_inferred: str | None = None,
     ) -> None:
         self._turn += 1
         record = {
@@ -51,6 +55,9 @@ class AuditLogger:
             "stt_latency_ms": stt_latency_ms,
             "llm_latency_ms": llm_latency_ms,
             "tts_latency_ms": tts_latency_ms,
+            "move_played": move_played,
+            "directives_fired": directives_fired or [],
+            "scenario_inferred": scenario_inferred,
         }
         with self.path.open("a", encoding="utf-8") as f:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")

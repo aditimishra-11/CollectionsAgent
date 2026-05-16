@@ -42,6 +42,56 @@ END_SENTINEL = "[END_CALL]"
 MAX_TURNS = 16
 
 
+# Intent -> scenario category. Behavioural classification of what THIS turn
+# actually was — discovered mid-call by the intent classifier, NOT pre-selected.
+# Surfaced in the bot-internals panel so reviewers can see the call's character
+# emerging in real time. Categories mirror the eval taxonomy.
+SCENARIO_BY_INTENT: dict[str, str] = {
+    # hardship — real distress signals
+    "mental_distress":   "hardship",
+    "medical_emergency": "hardship",
+    "job_loss":          "hardship",
+    "business_failure":  "hardship",
+    "natural_disaster":  "hardship",
+    "unexpected_expense": "hardship",
+    # adversarial / compliance edge cases
+    "abuse":               "adversarial",
+    "prompt_injection":    "adversarial",
+    "off_topic":           "adversarial",
+    "third_party_inquiry": "adversarial",
+    "third_party_answering": "adversarial",
+    "wrong_number":        "adversarial",
+    "legitimacy_challenge": "adversarial",
+    "do_not_call":         "adversarial",
+    "refuse_current_call": "adversarial",
+    "balance_inquiry":     "adversarial",   # privacy-edge
+    "product_query":       "adversarial",   # off-scope deflect
+    "deceased_claim":      "adversarial",
+    # language handoff
+    "language_preference": "language",
+    # standard PTP / collection conversation
+    "promise_to_pay":      "ptp",
+    "partial_payment":     "ptp",
+    "nach_failure":        "ptp",
+    "salary_not_credited": "ptp",
+    "out_of_town":         "ptp",
+    "payment_failed_while_trying": "ptp",
+    "already_paid":        "ptp",
+    "callback_request":    "ptp",
+    "waiver_request":      "ptp",
+    "dispute":             "ptp",
+    # neutral / probing
+    "no_response":         "probing",
+    "general":             "probing",
+}
+
+
+def _scenario_for_intent(intent: str | None) -> str | None:
+    if not intent:
+        return None
+    return SCENARIO_BY_INTENT.get(intent, "probing")
+
+
 # Map FSM decision notes to a concrete per-turn directive the LLM must honour.
 # Keeps the FSM emitting symbolic tags (which the audit/logs can match on) while
 # the LLM receives prose. Extend this dict as new notes are introduced.
@@ -253,12 +303,17 @@ class Conversation:
                 ended_reason = f"fast_path:{intent.intent}"
                 break
 
-            # Slow path → LLM generates within FSM constraints
+            # Slow path → LLM generates within FSM constraints. We also build
+            # a parallel `directives_fired` list — pure metadata so the bot-
+            # internals panel can show WHICH deterministic guardrails ran on
+            # this turn (not just the final state transition).
+            directives_fired: list[str] = []
             turn_directive = _directive_from_notes(decision.notes)
-            # Layer 2: when the customer proposes a PTP far outside policy,
-            # force the bot to push back rather than confirm it. Fires in any
-            # PTP-adjacent state (PTP_PROBE or COLLECTING) so a missed
-            # promise_to_pay classification can't bypass the policy.
+            if turn_directive:
+                # Layer 3 directive (refuse_current_call_first_strike, abuse_first_strike)
+                directives_fired.append(f"fsm:{decision.notes.split(' ')[0]}")
+
+            # Layer 2: PTP-horizon push-back
             if state_after in {"PTP_PROBE", "COLLECTING"} and self._policy is not None:
                 horizon_directive = _ptp_horizon_directive(user_text, self._policy)
                 if horizon_directive:
@@ -266,21 +321,18 @@ class Conversation:
                         (turn_directive + "\n\n" + horizon_directive)
                         if turn_directive else horizon_directive
                     )
+                    directives_fired.append("policy:ptp_horizon_breach")
 
-            # Layer 1: move-ladder enforcement. The FSM picks the next unplayed
-            # move for this state; the composer injects it as a hard directive
-            # and requires the LLM to tag its reply with [MOVE: X]. The bot
-            # cannot replay a move it has already played in this state —
-            # eliminates "asked when will you pay / when will you pay" loops.
+            # Layer 1: move-ladder enforcement
             move, ladder_exhausted = self._fsm.next_move()
             if ladder_exhausted:
-                # Out of moves in this state — close gracefully via callback.
                 turn_directive = (
                     (turn_directive + "\n\n" if turn_directive else "")
                     + "LADDER EXHAUSTED: you have already tried every move in this state. "
                     "Acknowledge briefly, offer ONE final callback ('would tomorrow work?'), "
                     "and end with [END_CALL] if they decline."
                 )
+                directives_fired.append("ladder:exhausted")
             elif move is not None:
                 move_block = (
                     f"REQUIRED MOVE: {move}\n"
@@ -290,6 +342,7 @@ class Conversation:
                     "Do not play any other move; do not repeat a move from earlier in this state."
                 )
                 turn_directive = (turn_directive + "\n\n" + move_block) if turn_directive else move_block
+                directives_fired.append(f"ladder:next_move={move}")
 
             bot_text_raw = self._llm_reply(turn_directive=turn_directive)
             validation = validate_response(bot_text_raw, state_after)
@@ -335,9 +388,12 @@ class Conversation:
                     f"(intent={intent.intent}). Stripping sentinel and continuing."
                 )
                 ends_now = False
+                directives_fired.append("guard:unauthorised_end_stripped")
             else:
                 ends_now = llm_requested_end
             bot_text_clean = bot_text.replace(END_SENTINEL, "").strip()
+            if not validation.passed:
+                directives_fired.append(f"validator:{','.join(validation.violations)}")
 
             self._emit_bot_turn(
                 bot_text_clean,
@@ -350,6 +406,9 @@ class Conversation:
                     "violations": validation.violations,
                     "evidence": validation.evidence,
                 },
+                move_played=played_move or move,
+                directives_fired=directives_fired,
+                scenario_inferred=_scenario_for_intent(intent.intent),
             )
 
             if ends_now or decision.next_state == "TERMINAL":
@@ -387,6 +446,9 @@ class Conversation:
         intent: str | None = None,
         intent_confidence: float | None = None,
         validator_result: dict | None = None,
+        move_played: str | None = None,
+        directives_fired: list[str] | None = None,
+        scenario_inferred: str | None = None,
     ) -> None:
         self._say_bot_text(text)
         self.history.append(LLMTurn(role="assistant", content=text))
@@ -399,6 +461,9 @@ class Conversation:
             fsm_state_before=fsm_state_before,
             fsm_state_after=fsm_state_after,
             validator_result=validator_result,
+            move_played=move_played,
+            directives_fired=directives_fired,
+            scenario_inferred=scenario_inferred,
         )
 
     def _finalise(self, start: float) -> ConversationResult:

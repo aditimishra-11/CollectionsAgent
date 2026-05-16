@@ -165,7 +165,7 @@
           <summary class="px-4 py-2 text-xs uppercase tracking-wider text-gray-500 cursor-pointer hover:text-gray-300 select-none">
             // bot internals — per-turn fsm / intent / validator
           </summary>
-          <div id="auditBody" class="px-4 py-3 text-[11px] font-mono text-gray-400 space-y-0.5 max-h-40 overflow-y-auto scroll"></div>
+          <div id="auditBody" class="px-4 py-3 text-[11px] font-mono text-gray-400 space-y-0.5 max-h-72 overflow-y-auto scroll"></div>
         </details>
       </section>
 
@@ -410,6 +410,33 @@
       return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     }
 
+    // Scenario tag colour map — surfaced AS THE CALL PROGRESSES (the bot
+    // discovers the call's character via intent classification; it isn't
+    // pre-selected). Mirrors SCENARIO_BY_INTENT on the backend.
+    const SCENARIO_COLORS = {
+      ptp:         'bg-green-900/40 border-green-700 text-green-300',
+      hardship:    'bg-amber-900/40 border-amber-700 text-amber-300',
+      adversarial: 'bg-red-900/40 border-red-700 text-red-300',
+      language:    'bg-blue-900/40 border-blue-700 text-blue-300',
+      probing:     'bg-gray-800 border-gray-700 text-gray-400',
+    };
+
+    function _scenarioChip(scenario) {
+      if (!scenario) return '';
+      const cls = SCENARIO_COLORS[scenario] || SCENARIO_COLORS.probing;
+      return `<span class="px-1.5 py-px rounded border ${cls} text-[10px] uppercase tracking-wider">${scenario}</span>`;
+    }
+    function _directiveChip(d) {
+      // Compact colour scheme by layer prefix
+      let cls = 'bg-gray-800 border-gray-700 text-gray-400';
+      if (d.startsWith('policy:'))   cls = 'bg-purple-900/40 border-purple-700 text-purple-300';
+      if (d.startsWith('ladder:'))   cls = 'bg-cyan-900/40 border-cyan-700 text-cyan-300';
+      if (d.startsWith('fsm:'))      cls = 'bg-indigo-900/40 border-indigo-700 text-indigo-300';
+      if (d.startsWith('validator:')) cls = 'bg-red-900/40 border-red-700 text-red-300';
+      if (d.startsWith('guard:'))    cls = 'bg-orange-900/40 border-orange-700 text-orange-300';
+      return `<span class="px-1.5 py-px rounded border ${cls} text-[10px]">${d}</span>`;
+    }
+
     let auditTurnCounter = 0;
     function appendAuditRow(data) {
       auditPanel.classList.remove('hidden');
@@ -423,11 +450,27 @@
         : v.passed === false
           ? `<span class="glow-red">BLOCKED</span> ${(v.violations || []).join(',')}`
           : '<span class="glow-green">✓</span>';
+      const scenario = _scenarioChip(data.scenario_inferred);
+      const move = data.move_played
+        ? `<span class="text-gray-500">move=</span><span class="text-cyan-300">${data.move_played}</span>`
+        : '';
+      const directives = (data.directives_fired || [])
+        .filter(d => !d.startsWith('ladder:next_move'))  // already shown via 'move='
+        .map(_directiveChip).join(' ');
+
       const div = document.createElement('div');
-      div.innerHTML = `<span class="text-gray-600">turn ${auditTurnCounter}:</span>
-        <span class="text-gray-500">[${sb}</span><span class="text-gray-300">→${sa}]</span>
-        <span class="text-gray-500">intent=</span><span class="text-amber-400">${intent}</span>
-        <span class="text-gray-500">validator=</span>${validatorStr}`;
+      div.className = 'border-b border-gray-800/50 pb-1 mb-1';
+      div.innerHTML = `
+        <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+          <span class="text-gray-600">turn ${auditTurnCounter}</span>
+          ${scenario}
+          <span class="text-gray-500">[${sb}<span class="text-gray-300">→${sa}]</span></span>
+          <span class="text-gray-500">intent=<span class="text-amber-400">${intent}</span></span>
+          ${move}
+          <span class="text-gray-500">validator=${validatorStr}</span>
+        </div>
+        ${directives ? `<div class="mt-0.5 ml-1 flex flex-wrap gap-1">${directives}</div>` : ''}
+      `;
       auditBody.appendChild(div);
       auditBody.scrollTop = auditBody.scrollHeight;
     }
