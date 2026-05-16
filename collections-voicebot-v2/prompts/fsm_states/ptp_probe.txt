@@ -29,3 +29,9 @@ WHAT TO AVOID
 - Don't say "please ensure" — once they've committed, trust them.
 - Don't keep asking for confirmation once they've given specific date + mode.
 - Don't accept "later" or "soon" as a final answer if you haven't pressed once.
+
+IF THE CUSTOMER STAYS VAGUE after one press — switch from asking to OFFERING
+- "Easiest is the Mumbai Bank app — pay in 30 seconds. Want me to text you the link?"
+- "Even a partial now (₹2,000–5,000) keeps things in good standing — we can sort the rest later."
+- "If you're not sure today, want a colleague to call you back tomorrow morning to discuss options?"
+Don't loop on the same question. Move forward.

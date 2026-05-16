@@ -41,6 +41,17 @@
       0% { box-shadow: 0 0 0 0 rgba(248, 81, 73, 0.5); }
       100% { box-shadow: 0 0 0 16px rgba(248, 81, 73, 0); }
     }
+    .filter-chip {
+      color: #8b949e;
+      background: #0a0e14;
+      transition: all 0.1s ease;
+    }
+    .filter-chip:hover { color: #c9d1d9; }
+    .filter-chip.chip-active {
+      background: #14532d;
+      border-color: #16a34a !important;
+      color: #86efac;
+    }
   </style>
 </head>
 <body class="min-h-screen">
@@ -60,9 +71,45 @@
 
     <!-- Setup row -->
     <section class="panel rounded p-4 mb-4">
+
+      <!-- Filter chips -->
+      <div class="flex flex-wrap gap-x-6 gap-y-2 mb-3 text-xs">
+        <div class="flex items-center gap-1.5">
+          <span class="text-gray-500 uppercase tracking-wider">tier:</span>
+          <button data-filter="tier" data-value="all" class="filter-chip chip-active px-2 py-0.5 rounded border border-gray-600 hover:bg-gray-800">all</button>
+          <button data-filter="tier" data-value="apex" class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">apex</button>
+          <button data-filter="tier" data-value="edge" class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">edge</button>
+          <button data-filter="tier" data-value="spark" class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">spark</button>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-gray-500 uppercase tracking-wider">dpd:</span>
+          <button data-filter="dpd" data-value="all" class="filter-chip chip-active px-2 py-0.5 rounded border border-gray-600 hover:bg-gray-800">all</button>
+          <button data-filter="dpd" data-value="early" class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">4–10</button>
+          <button data-filter="dpd" data-value="mid" class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">11–20</button>
+          <button data-filter="dpd" data-value="late" class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">21–30</button>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-gray-500 uppercase tracking-wider">history:</span>
+          <button data-filter="history" data-value="all" class="filter-chip chip-active px-2 py-0.5 rounded border border-gray-600 hover:bg-gray-800">all</button>
+          <button data-filter="history" data-value="first" class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">first</button>
+          <button data-filter="history" data-value="occasional" class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">occasional</button>
+          <button data-filter="history" data-value="frequent" class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">frequent</button>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-gray-500 uppercase tracking-wider">scenario:</span>
+          <button data-filter="scenario" data-value="all" class="filter-chip chip-active px-2 py-0.5 rounded border border-gray-600 hover:bg-gray-800">all</button>
+          <button data-filter="scenario" data-value="ptp" class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">payment</button>
+          <button data-filter="scenario" data-value="hardship" class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">hardship</button>
+          <button data-filter="scenario" data-value="adversarial" class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">adversarial</button>
+          <button data-filter="scenario" data-value="language" class="filter-chip px-2 py-0.5 rounded border border-gray-700 hover:bg-gray-800">language</button>
+        </div>
+      </div>
+
       <div class="flex flex-wrap items-end gap-3">
         <div class="flex-1 min-w-[260px]">
-          <label class="block text-xs text-gray-500 mb-1 uppercase tracking-wider">$ persona</label>
+          <label class="block text-xs text-gray-500 mb-1 uppercase tracking-wider">
+            $ persona  <span id="personaCount" class="text-gray-600">(loading)</span>
+          </label>
           <select id="persona" class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-green-500">
             <option value="">loading…</option>
           </select>
@@ -231,15 +278,73 @@
     modeVoiceBtn.addEventListener('click', () => setMode(true));
     setMode(false);
 
-    // -------------------- persona loading --------------------
+    // -------------------- persona loading + filters --------------------
+    const filters = { tier: 'all', dpd: 'all', history: 'all', scenario: 'all' };
+    const personaCount = document.getElementById('personaCount');
+
+    // Scenario tag per persona — keyed off persona_id + description heuristics.
+    // hardship  = real-life distress (job/health/business/disaster)
+    // adversarial = abuse, scam-suspect, DND, prompt-injection profile, third-party
+    // language  = non-English primary language
+    // ptp       = standard payment-promise conversation (default)
+    const SCENARIO_TAGS = {
+      P07: 'hardship', P08: 'hardship', P09: 'hardship', P15: 'hardship',
+      P16: 'hardship', P17: 'hardship', P22: 'hardship', P26: 'hardship',
+      P10: 'adversarial', P12: 'adversarial', P14: 'adversarial',
+      P19: 'adversarial', P20: 'adversarial', P27: 'adversarial', P32: 'adversarial',
+      P28: 'language', P29: 'language', P30: 'language', P31: 'language',
+    };
+    function scenarioOf(p) { return SCENARIO_TAGS[p.persona_id] || 'ptp'; }
+    function dpdBucket(dpd) {
+      const d = Number(dpd);
+      if (d <= 10) return 'early';
+      if (d <= 20) return 'mid';
+      return 'late';
+    }
+    function matchesFilters(p) {
+      if (filters.tier !== 'all' && p.card_tier !== filters.tier) return false;
+      if (filters.dpd !== 'all' && dpdBucket(p.dpd) !== filters.dpd) return false;
+      if (filters.history !== 'all' && p.default_history !== filters.history) return false;
+      if (filters.scenario !== 'all' && scenarioOf(p) !== filters.scenario) return false;
+      return true;
+    }
+
     async function loadPersonas() {
       const res = await fetch('/api/personas');
       personas = await res.json();
-      personaSel.innerHTML = '<option value="">— pick a customer —</option>' + personas.map(p =>
-        `<option value="${p.persona_id}">${p.persona_id} — ${p.name} (${p.card_tier}, DPD ${p.dpd})</option>`
-      ).join('');
+      renderPersonaDropdown();
+    }
+
+    function renderPersonaDropdown() {
+      const prev = personaSel.value;
+      const filtered = personas.filter(matchesFilters);
+      if (filtered.length === 0) {
+        personaSel.innerHTML = '<option value="">— no matches; loosen filters —</option>';
+      } else {
+        personaSel.innerHTML = '<option value="">— pick a customer —</option>' + filtered.map(p => {
+          const tag = scenarioOf(p);
+          return `<option value="${p.persona_id}">${p.persona_id} — ${p.name} · ${p.card_tier} · DPD ${p.dpd} · ${tag}</option>`;
+        }).join('');
+        // keep previous selection if still valid
+        if (filtered.some(p => p.persona_id === prev)) personaSel.value = prev;
+      }
+      personaCount.textContent = `(${filtered.length} of ${personas.length})`;
       updatePersonaDesc();
     }
+
+    // Filter chip click handlers
+    document.querySelectorAll('.filter-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.filter;
+        const val = btn.dataset.value;
+        filters[key] = val;
+        // toggle active class within same group
+        document.querySelectorAll(`.filter-chip[data-filter="${key}"]`).forEach(b => {
+          b.classList.toggle('chip-active', b.dataset.value === val);
+        });
+        renderPersonaDropdown();
+      });
+    });
     function updatePersonaDesc() {
       const p = personas.find(p => p.persona_id === personaSel.value);
       if (!p) {
@@ -587,23 +692,27 @@
       try {
         // First-load downloads Silero ONNX model from CDN (~1MB).
         micVad = await vad.MicVAD.new({
-          // Reasonable defaults for Hinglish — Silero is robust enough that
-          // these don't need much tuning.
-          positiveSpeechThreshold: 0.5,
+          // Tuned for Hinglish + barge-in: minSpeechFrames=6 (~375ms) is the
+          // sustained-speech threshold that distinguishes real interruption
+          // from echo blips of the bot's own audio.
+          positiveSpeechThreshold: 0.55,
           negativeSpeechThreshold: 0.35,
-          minSpeechFrames: 4,           // ~250ms minimum (filters out clicks/coughs)
-          preSpeechPadFrames: 10,       // include audio just before speech start
-          redemptionFrames: 16,         // wait this many silent frames before ending utterance
+          minSpeechFrames: 6,           // ~375ms sustained = real speech (echo blips don't sustain)
+          preSpeechPadFrames: 10,
+          redemptionFrames: 16,         // ~500ms silence to end utterance
           onSpeechStart: () => {
-            if (botIsSpeaking) return;
+            // If bot is currently speaking, this is a BARGE-IN — cut its audio.
+            if (botIsSpeaking) {
+              stopCurrentBotAudio();
+              addLine('system', 'customer interrupted');
+            }
             setVadIndicator('listening');
           },
           onVADMisfire: () => {
-            if (botIsSpeaking) return;
-            setVadIndicator('idle');
+            // Short blip — likely echo or a click; ignore.
+            if (!botIsSpeaking) setVadIndicator('idle');
           },
           onSpeechEnd: async (audio) => {
-            if (botIsSpeaking) return;
             setVadIndicator('sending');
             const wav = encodeWAV(audio, TARGET_SR);
             const blob = new Blob([wav], { type: 'audio/wav' });
@@ -619,7 +728,7 @@
             } catch (e) {
               addLine('error', 'upload: ' + e.message);
             } finally {
-              if (!botIsSpeaking) setVadIndicator('idle');
+              setVadIndicator('idle');
             }
           },
         });
@@ -666,8 +775,22 @@
       return buffer;
     }
 
-    // Base64 (int16 PCM mono) → playable AudioBuffer
-    // Pauses VAD during playback so the bot's voice doesn't trigger itself.
+    // Bot audio playback that supports BARGE-IN.
+    // VAD keeps running during playback. If user starts talking sustainably,
+    // we cut the audio immediately (real phone-call interrupt feel).
+    // Browser AEC + Silero's minSpeechFrames threshold filter out the bot's
+    // own voice from triggering this (especially with headphones).
+    let currentBotSource = null;
+    function stopCurrentBotAudio() {
+      if (currentBotSource) {
+        try { currentBotSource.stop(); } catch (e) {}
+        try { currentBotSource.disconnect(); } catch (e) {}
+        currentBotSource = null;
+      }
+      botIsSpeaking = false;
+      setVadIndicator('idle');
+    }
+
     function playBase64Audio(b64, sampleRate) {
       try {
         const bin = atob(b64);
@@ -683,16 +806,18 @@
         src.buffer = buf;
         src.connect(ctx.destination);
 
+        // Stop any prior audio still playing
+        stopCurrentBotAudio();
+
+        currentBotSource = src;
         botIsSpeaking = true;
-        if (micVad) { try { micVad.pause(); } catch (e) {} }
         setVadIndicator('bot_speaking');
+        // NOTE: do NOT pause VAD — keep it listening for barge-in
 
         src.onended = () => {
+          if (currentBotSource === src) currentBotSource = null;
           botIsSpeaking = false;
-          if (micVad) {
-            try { micVad.start(); } catch (e) {}
-            setVadIndicator('idle');
-          }
+          setVadIndicator('idle');
         };
         src.start();
       } catch (e) {
