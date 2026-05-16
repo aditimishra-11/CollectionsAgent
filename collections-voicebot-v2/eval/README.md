@@ -85,6 +85,19 @@ The eval's job is **behavioural assurance** — confirming the bot's actions are
 | `language_mode` | english / hinglish / hindi / tamil / malayalam | Exposes language-specific regressions |
 | `weight` | 1.0 / 1.5 / 2.0 | Per-scenario multiplier — `trap` = 2.0 |
 
+### A note on two scenario taxonomies — eval vs runtime
+
+The `bucket` field above is the **authoritative behavioural classification** used in `scenarios.yaml` (8 buckets, eval-scoring granularity).
+
+The demo UI's bot-internals panel separately surfaces a **simplified 5-class runtime scenario** per turn (`ptp` / `hardship` / `adversarial` / `language` / `probing`) — derived from the intent classifier output via `SCENARIO_BY_INTENT` in `app/conversation.py`. These are intentionally coarser categories meant for live PM/Ops explainability, not eval scoring.
+
+Two key properties of the runtime classification:
+
+1. **Discovered mid-call, not pre-selected.** The chip updates per turn as the customer's behaviour reveals itself — a customer who opened with a PTP discussion can shift to `hardship` or `adversarial` if a distress / hostility signal surfaces. A reviewer cannot pre-select these categories on the persona picker (an earlier attempt was dropped — see `docs/PRD_v2_DELTAS.md` §7).
+2. **Every intent has a category.** All 30 intents in the classifier map to one of the 5 categories; unknown intents fall back to `probing` so the chip never goes blank.
+
+For eval reporting and scoring, use `bucket`. For demo / Ops live monitoring, use `scenario_inferred`.
+
 ## Priority levels
 
 | Priority | Weight × | What it covers |

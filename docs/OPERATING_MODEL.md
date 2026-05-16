@@ -14,6 +14,9 @@ The original architecture doc and PRD focus on what the bot does. They don't add
 | Compliance rule encoding (validator regex, NEVER list) | ✓ | |
 | Audio stack (STT vendor, TTS vendor, AEC) | ✓ | |
 | Model upgrades, regression testing | ✓ | |
+| Move ladder per FSM state (which moves exist, in what order) | ✓ | |
+| SegmentPolicy resolver logic (which row matches which segment) | ✓ | |
+| SegmentPolicy threshold values (`max_ptp_days`, `abuse_strikes_allowed`, `callback_sla_hours`, `human_takeover_on_refuse`) | | ✓ |
 | Retry policies (attempts × interval) | | ✓ |
 | Dial windows (within TRAI bounds) | | ✓ |
 | Segment routing rules | | ✓ |
@@ -79,6 +82,26 @@ The original architecture doc and PRD focus on what the bot does. They don't add
 - Regulatory rule mapping: which prompt section / validator rule maps to which RBI/DPDP/TRAI clause
 - Complaint correlation: which calls preceded customer complaints?
 - Rule-change deployment timeline: when did we update X after regulator published Y?
+
+**How the v2 bot-internals panel serves this persona (NEW):**
+
+Every per-turn audit record now carries a `directives_fired[]` array — one entry per deterministic guardrail that ran on that turn, tagged by layer prefix:
+
+| Prefix | What it means | Example |
+|---|---|---|
+| `policy:` | A SegmentPolicy threshold fired | `policy:ptp_horizon_breach` (bot pushed back on a too-far PTP) |
+| `ladder:` | The move ladder forced a specific move | `ladder:next_move=OFFER_CALLBACK`, `ladder:exhausted` |
+| `fsm:` | An FSM strike or note fired | `fsm:abuse_first_strike`, `fsm:refuse_current_call_first_strike` |
+| `validator:` | A compliance rule blocked the LLM | `validator:commitment_overreach`, `validator:discloses_balance` |
+| `guard:` | A meta-guard caught the LLM going off-script | `guard:unauthorised_end_stripped` (LLM tried to end call without FSM authorisation) |
+
+Compliance can grep on these directly during a monthly audit. Three sample queries:
+
+- "Show me every call where the bot was about to promise no future contact and the validator caught it." → `grep "validator:commitment_overreach" *.jsonl`
+- "Show me every call where the bot ran out of moves in PTP_PROBE and gracefully closed." → `grep "ladder:exhausted" *.jsonl`
+- "Show me every call where the LLM tried to self-terminate against FSM authority." → `grep "guard:unauthorised_end_stripped" *.jsonl`
+
+Each result row also carries `policy_rationale` on the outcome (e.g. `frequent_late_strict`) — so a Compliance auditor reviewing a refusal can see at a glance whether the segment policy correctly upgraded the case to human takeover.
 
 ## Operational metrics — how each persona's metric feeds the bank's north star
 
