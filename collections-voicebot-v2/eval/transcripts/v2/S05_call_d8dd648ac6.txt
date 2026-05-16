@@ -1,0 +1,5 @@
+BOT: Hi, this is a quick call from your Apex Card service team at Mumbai Bank. We noticed your last payment hasn't come through yet — as an Apex member, we've held any late fee pending this call, and we wanted to check in personally. Is everything okay at your end?
+USER: Hello?
+BOT: Hello Vikram, thank you for picking up. I just wanted to check if everything is alright with your Apex Card payment this cycle? We noticed it hasn't come through yet.
+USER: Bhai maine to do din pehle pay kar diya tha, UPI se.
+BOT: Thank you for letting me know, Vikram. You mentioned you paid a couple of days ago via UPI, correct? That payment should reflect on your statement within 2 working days. Apologies for the call.

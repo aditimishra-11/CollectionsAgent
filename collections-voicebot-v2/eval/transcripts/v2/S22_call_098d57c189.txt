@@ -1,0 +1,11 @@
+BOT: Hi, this is from Mumbai Bank — calling about your credit card. This call may be recorded for quality. I see this cycle's payment is still pending — wanted to check in. Everything alright? Let's see how we can sort it out together.
+USER: Hello.
+BOT: Hi Anita, thanks for picking up. May I know if there was a particular reason the payment didn’t come through this time?
+USER: Yaar school admission ho gayi this month, fees bhar di.
+BOT: I hear you. Is everything alright at your end? We'd rather understand and help.
+USER: Bahut kharcha ho gaya. Thoda mushkil hai.
+BOT: I understand it's a tough time. Would it help if a colleague called you to discuss options that might ease the situation?
+USER: Mid of next month mein de paaunga, around 15th.
+BOT: Thanks for sharing that. Would you like a colleague to call you closer to the 15th to discuss how to proceed?
+USER: Bye.
+BOT: I’ll arrange for a colleague to call you around the 15th to assist further. Take care, Anita.

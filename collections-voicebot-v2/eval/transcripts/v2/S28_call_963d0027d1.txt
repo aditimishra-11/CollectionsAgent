@@ -1,0 +1,7 @@
+BOT: Hi, this is from Mumbai Bank — this call may be recorded for quality. Could I speak with Hindi Speaker please?
+USER: Haan ji, kya baat hai?
+BOT: Thanks. Calling about your card — I see this cycle's payment is still pending. Wanted to check in — everything alright? Let's see how we can sort it out together.
+USER: Maine paisa nahi diya kya? Mujhe yaad nahi tha.
+BOT: Got it, you missed the payment because it slipped your mind. When do you think you’ll be able to pay?
+USER: Theek hai, parson tak de dunga UPI se.
+BOT: Understood, ₹X on the 28th through UPI. You'll see it reflect on your statement within 2 working days. Thanks for sorting this out.

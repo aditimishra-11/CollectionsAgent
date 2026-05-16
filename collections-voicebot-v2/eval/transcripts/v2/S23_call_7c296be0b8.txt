@@ -1,0 +1,5 @@
+BOT: Hi, this is from Mumbai Bank about your credit card payment. Calls may be recorded for quality and compliance. I see this cycle's payment hasn't come through yet — is everything alright? Let's see how we can sort it out.
+USER: Hello.
+BOT: Hello Kiran, thank you for picking up. May I know if there was any particular reason the minimum payment didn't go through this time?
+USER: Abhi main busy hoon. Can a human call me back?
+BOT: I understand, Kiran. I can arrange for a human colleague to call you back at a time that suits you. Please let me know a convenient time for the callback.

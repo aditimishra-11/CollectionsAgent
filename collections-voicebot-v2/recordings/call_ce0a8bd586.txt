@@ -1,0 +1,9 @@
+ASSISTANT: Hi, this is a quick call from your Apex Card service team at Mumbai Bank. We noticed your last payment hasn't come through yet — as an Apex member, we've held any late fee pending this call, and we wanted to check in personally. Is everything okay at your end?
+USER: What work do you have with me?
+ASSISTANT: I’m calling about your Apex Card payment. We noticed the last payment hasn’t come through yet and wanted to check if everything is alright or if there’s anything we can help with.
+USER: No, I will not pay. I don't want to pay, I don't want to pay.
+ASSISTANT: I hear you. Is everything okay at your end? Sometimes things come up that are difficult to talk about. We'd rather understand and help.
+USER: I am jobless, what to do?
+ASSISTANT: I'm sorry to hear about your job situation. I will arrange for a human colleague to call you back to discuss how we can assist you during this time. When would be a good time for you to receive this call?
+USER: There is no good time, bye.
+ASSISTANT: I understand. We will arrange for a colleague to call you when possible. Please take care, and feel free to reach out to Mumbai Bank whenever you’re ready. Goodbye.

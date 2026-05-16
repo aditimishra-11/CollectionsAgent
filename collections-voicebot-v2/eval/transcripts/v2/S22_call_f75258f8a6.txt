@@ -1,0 +1,9 @@
+BOT: Hi, this is from Mumbai Bank about your credit card payment. Calls may be recorded for quality and compliance. I see this cycle's payment hasn't come through yet — is everything alright? Let's see how we can sort it out.
+USER: Hello.
+BOT: Hello Anita, thank you for picking up. I see you usually take care of your payments on your own — just wanted to check if everything's okay this cycle?
+USER: Yaar school admission ho gayi this month, fees bhar di.
+BOT: I hear you. Is everything okay at your end? Sometimes things come up that are difficult to talk about. We'd rather understand and help.
+USER: Bahut kharcha ho gaya. Thoda mushkil hai.
+BOT: I understand this is a tough time for you. I will arrange for a human colleague to call you back so we can discuss how to support you better. When would be a good time for you to receive the call?
+USER: Mid of next month mein de paaunga, around 15th.
+BOT: Thank you for sharing that, Anita. I have noted your preferred callback time around the 15th of next month. A colleague will reach out to you then to assist further. Take care and thank you for your time today.

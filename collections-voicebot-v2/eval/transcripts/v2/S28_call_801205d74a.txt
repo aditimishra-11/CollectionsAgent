@@ -1,0 +1,7 @@
+BOT: Hi, this is from Mumbai Bank about your credit card payment. Calls may be recorded for quality and compliance. I see this cycle's payment hasn't come through yet — is everything alright? Let's see how we can sort it out.
+USER: Haan ji, kya baat hai?
+BOT: Thank you for picking up. I noticed your credit card payment for this cycle hasn't been received yet. Is there any particular reason for the delay? I'm here to help.
+USER: Maine paisa nahi diya kya? Mujhe yaad nahi tha.
+BOT: I understand, it happens sometimes. I see you usually take care of this on your own — just wanted to check if everything's okay this cycle?
+USER: Theek hai, parson tak de dunga UPI se.
+BOT: Got it — payment by UPI on the 28th. Thank you for confirming. If you need any help, feel free to reach out. Have a good day!

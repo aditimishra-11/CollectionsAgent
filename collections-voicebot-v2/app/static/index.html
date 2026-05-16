@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mumbai Bank Collections Voicebot — Terminal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'JetBrains Mono', 'Menlo', 'Consolas', monospace;
+      background: #0a0e14;
+      color: #c9d1d9;
+    }
+    .chat-line { animation: fadeIn 0.15s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
+    .glow-green { color: #7ce38b; text-shadow: 0 0 6px rgba(124, 227, 139, 0.4); }
+    .glow-red { color: #f85149; text-shadow: 0 0 6px rgba(248, 81, 73, 0.4); }
+    .glow-amber { color: #d29922; }
+    .blink { animation: blink 1s steps(2, start) infinite; }
+    @keyframes blink { to { visibility: hidden; } }
+    .panel { background: #161b22; border: 1px solid #30363d; }
+    .panel-hdr { background: #21262d; color: #8b949e; }
+    input, select, button { font-family: inherit; }
+    select option { background: #161b22; color: #c9d1d9; }
+    .scroll::-webkit-scrollbar { width: 8px; }
+    .scroll::-webkit-scrollbar-track { background: #0a0e14; }
+    .scroll::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+    .mic-btn {
+      transition: all 0.1s ease;
+      box-shadow: 0 0 0 0 rgba(124, 227, 139, 0);
+    }
+    .mic-btn.recording {
+      background: #f85149 !important;
+      box-shadow: 0 0 0 8px rgba(248, 81, 73, 0.2);
+      animation: pulse 1s ease-out infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(248, 81, 73, 0.5); }
+      100% { box-shadow: 0 0 0 16px rgba(248, 81, 73, 0); }
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <div class="max-w-7xl mx-auto px-6 py-6">
+
+    <!-- Title bar -->
+    <header class="mb-4 flex items-baseline justify-between border-b border-gray-700 pb-3">
+      <div>
+        <h1 class="text-lg font-semibold glow-green">▌MUMBAI BANK :: COLLECTIONS VOICEBOT v2</h1>
+        <p class="text-xs text-gray-500 mt-1">pre-filter → intent classifier → FSM → prompt composer → LLM → validator → TTS</p>
+      </div>
+      <div class="text-xs text-gray-500">
+        <span id="modeIndicator">MODE: <span class="glow-amber">SELECT_PERSONA</span></span>
+      </div>
+    </header>
+
+    <!-- Setup row -->
+    <section class="panel rounded p-4 mb-4">
+      <div class="flex flex-wrap items-end gap-3">
+        <div class="flex-1 min-w-[260px]">
+          <label class="block text-xs text-gray-500 mb-1 uppercase tracking-wider">$ persona</label>
+          <select id="persona" class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-green-500">
+            <option value="">loading…</option>
+          </select>
+        </div>
+        <div class="flex items-end gap-2">
+          <label class="text-xs text-gray-500 uppercase tracking-wider mr-1">$ mode</label>
+          <button id="modeTextBtn" type="button"
+                  class="px-3 py-1.5 text-xs rounded border border-gray-700 bg-gray-900 hover:bg-gray-800 mode-btn active">
+            text
+          </button>
+          <button id="modeVoiceBtn" type="button"
+                  class="px-3 py-1.5 text-xs rounded border border-gray-700 bg-gray-900 hover:bg-gray-800 mode-btn">
+            voice
+          </button>
+        </div>
+        <button id="startBtn"
+                class="bg-green-700 hover:bg-green-600 text-white text-sm font-medium px-4 py-1.5 rounded border border-green-600 disabled:bg-gray-700 disabled:border-gray-700 disabled:cursor-not-allowed">
+          ▶ START CALL
+        </button>
+        <button id="endBtn"
+                class="hidden bg-red-900 hover:bg-red-800 text-white text-sm px-4 py-1.5 rounded border border-red-700">
+          ◼ END
+        </button>
+      </div>
+      <p id="personaDesc" class="mt-2 text-xs text-gray-500 hidden"></p>
+    </section>
+
+    <!-- Main grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+      <!-- LEFT: Terminal-style conversation -->
+      <section class="lg:col-span-2 panel rounded flex flex-col" style="min-height: 540px; max-height: 720px;">
+        <div class="panel-hdr px-4 py-2 flex justify-between items-center text-xs uppercase tracking-wider border-b border-gray-700">
+          <span>// session</span>
+          <span id="fsmIndicator" class="text-gray-500">— ready —</span>
+        </div>
+        <div id="chat" class="flex-1 overflow-y-auto scroll px-4 py-3 space-y-1 text-sm leading-relaxed">
+          <div class="text-gray-600 text-xs">
+            $ awaiting persona selection<span class="blink">▊</span>
+          </div>
+        </div>
+        <!-- Input area: text OR voice -->
+        <div class="border-t border-gray-700 px-3 py-3 bg-gray-900">
+          <!-- text input -->
+          <form id="sendForm" class="flex gap-2">
+            <span class="text-green-400 text-sm self-center">$</span>
+            <input id="userInput" type="text"
+                   class="flex-1 bg-transparent text-sm text-gray-200 focus:outline-none placeholder-gray-600 disabled:opacity-30"
+                   placeholder="type as customer (hinglish ok)…"
+                   disabled />
+            <button type="submit" id="sendBtn"
+                    class="text-xs px-3 py-1 border border-gray-600 rounded hover:bg-gray-800 disabled:opacity-30"
+                    disabled>
+              ENTER
+            </button>
+          </form>
+          <!-- voice control -->
+          <div id="voiceControls" class="hidden flex items-center gap-3">
+            <button id="micBtn" type="button"
+                    class="mic-btn flex items-center gap-2 bg-green-700 hover:bg-green-600 text-white text-sm font-medium px-5 py-2 rounded-full">
+              <span class="text-lg">●</span>
+              <span id="micLabel">HOLD TO SPEAK</span>
+            </button>
+            <span id="voiceStatus" class="text-xs text-gray-500"></span>
+            <audio id="botAudio" hidden></audio>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT: side panels -->
+      <section class="space-y-4">
+
+        <!-- CRM context -->
+        <div class="panel rounded">
+          <div class="panel-hdr px-4 py-2 text-xs uppercase tracking-wider border-b border-gray-700">// crm context</div>
+          <div id="crmBody" class="p-4 text-xs text-gray-500">$ no call started yet</div>
+        </div>
+
+        <!-- Segmentation decision -->
+        <div id="segmentPanel" class="panel rounded hidden">
+          <div class="panel-hdr px-4 py-2 text-xs uppercase tracking-wider border-b border-gray-700">// bot segmentation</div>
+          <div class="p-4 text-xs">
+            <div class="mb-2">
+              <span class="text-gray-500">strategy:</span>
+              <span id="strategy" class="glow-green ml-2"></span>
+            </div>
+            <div>
+              <span class="text-gray-500">modifiers:</span>
+              <div id="modifiers" class="mt-1 flex flex-wrap gap-1"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Outcome -->
+        <div id="outcomePanel" class="panel rounded hidden">
+          <div class="panel-hdr px-4 py-2 text-xs uppercase tracking-wider border-b border-gray-700">// call outcome → crm</div>
+          <div id="outcomeBody" class="p-4 text-xs"></div>
+        </div>
+
+      </section>
+    </div>
+
+    <footer class="mt-6 text-xs text-gray-600 text-center font-mono">
+      <span class="text-gray-700">[</span> stack: OpenAI gpt-4.1-mini · Sarvam Saaras V3 · Sarvam Bulbul V3 · Silero VAD · NLMS AEC <span class="text-gray-700">]</span>
+    </footer>
+  </div>
+
+  <script>
+    // -------------------- state --------------------
+    const personaSel = document.getElementById('persona');
+    const personaDesc = document.getElementById('personaDesc');
+    const startBtn = document.getElementById('startBtn');
+    const endBtn = document.getElementById('endBtn');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const sendForm = document.getElementById('sendForm');
+    const chat = document.getElementById('chat');
+    const fsmIndicator = document.getElementById('fsmIndicator');
+    const modeIndicator = document.getElementById('modeIndicator');
+    const crmBody = document.getElementById('crmBody');
+    const segmentPanel = document.getElementById('segmentPanel');
+    const strategyEl = document.getElementById('strategy');
+    const modifiersEl = document.getElementById('modifiers');
+    const outcomePanel = document.getElementById('outcomePanel');
+    const outcomeBody = document.getElementById('outcomeBody');
+    const modeTextBtn = document.getElementById('modeTextBtn');
+    const modeVoiceBtn = document.getElementById('modeVoiceBtn');
+    const voiceControls = document.getElementById('voiceControls');
+    const micBtn = document.getElementById('micBtn');
+    const micLabel = document.getElementById('micLabel');
+    const voiceStatus = document.getElementById('voiceStatus');
+    const botAudio = document.getElementById('botAudio');
+
+    let currentCallId = null;
+    let eventSource = null;
+    let personas = [];
+    let voiceMode = false;
+
+    // -------------------- mode toggle --------------------
+    function setMode(voice) {
+      voiceMode = voice;
+      modeTextBtn.classList.toggle('bg-gray-700', !voice);
+      modeTextBtn.classList.toggle('border-gray-500', !voice);
+      modeVoiceBtn.classList.toggle('bg-gray-700', voice);
+      modeVoiceBtn.classList.toggle('border-gray-500', voice);
+      modeIndicator.innerHTML = `MODE: <span class="glow-amber">${voice ? 'VOICE' : 'TEXT'}</span>`;
+    }
+    modeTextBtn.addEventListener('click', () => setMode(false));
+    modeVoiceBtn.addEventListener('click', () => setMode(true));
+    setMode(false);
+
+    // -------------------- persona loading --------------------
+    async function loadPersonas() {
+      const res = await fetch('/api/personas');
+      personas = await res.json();
+      personaSel.innerHTML = '<option value="">— pick a customer —</option>' + personas.map(p =>
+        `<option value="${p.persona_id}">${p.persona_id} — ${p.name} (${p.card_tier}, DPD ${p.dpd})</option>`
+      ).join('');
+      updatePersonaDesc();
+    }
+    function updatePersonaDesc() {
+      const p = personas.find(p => p.persona_id === personaSel.value);
+      if (!p) {
+        personaDesc.textContent = '';
+        crmBody.innerHTML = '$ pick a customer to see their profile';
+        return;
+      }
+      personaDesc.textContent = '';
+      renderProfileNarrative(p);
+    }
+    personaSel.addEventListener('change', updatePersonaDesc);
+
+    // Banker-style narrative — talks about the customer like a person, not parameters.
+    function renderProfileNarrative(p) {
+      const tier = p.card_tier.charAt(0).toUpperCase() + p.card_tier.slice(1);
+      const tierLabel = { spark: 'Spark (entry)', edge: 'Edge (mid-tier)', apex: 'Apex (premium)' }[p.card_tier] || tier;
+
+      let tenure;
+      if (p.relationship_years >= 3) tenure = `${p.relationship_years}-year`;
+      else if (p.relationship_years >= 0.5) tenure = `${p.relationship_years}-year`;
+      else tenure = 'brand-new (under 6 months)';
+
+      const bureauBand = p.bureau_score >= 750 ? 'strong (prime)' : p.bureau_score >= 650 ? 'decent (near-prime)' : 'weak (sub-prime)';
+
+      const utilPct = p.credit_limit > 0 ? Math.round(100 * p.outstanding_amount / p.credit_limit) : 0;
+      let utilStory;
+      if (utilPct < 20) utilStory = `using only ${utilPct}% of their limit — small outstanding, probably just forgot`;
+      else if (utilPct <= 70) utilStory = `using ${utilPct}% of their limit — moderate balance`;
+      else utilStory = `using ${utilPct}% of their limit — running close to the ceiling, cash-flow signal`;
+
+      const historyStory = {
+        'first': 'first missed payment ever',
+        'occasional': 'has missed once or twice before',
+        'frequent': 'pattern of missing payments (3+ times)',
+      }[p.default_history] || p.default_history;
+
+      const selfCureStory = p.self_cure_history === true || String(p.self_cure_history).toLowerCase() === 'true'
+        ? 'usually takes care of it on their own after a nudge'
+        : 'rarely self-cures — needs voice contact to actually pay';
+
+      const dpdStory = p.dpd <= 10
+        ? `just ${p.dpd} days late — early`
+        : `${p.dpd} days past due — late enough that there's usually a real reason`;
+
+      // Build a paragraph that reads like a banker briefing
+      const paragraph = `
+        <strong class="text-white">${p.name}</strong> is a ${tenure} <span class="glow-green">${tierLabel}</span> card customer.
+        Credit profile is <span class="text-gray-200">${bureauBand}</span> (bureau ${p.bureau_score}).
+        This is their <span class="text-gray-200">${historyStory}</span>.
+        Right now they're ${dpdStory}, ${utilStory}.
+        ${selfCureStory.charAt(0).toUpperCase() + selfCureStory.slice(1)}.
+      `;
+
+      crmBody.innerHTML = `
+        <div class="space-y-3 text-xs leading-relaxed">
+          <p class="text-gray-300">${paragraph}</p>
+          <p class="text-gray-500 italic border-l-2 border-gray-700 pl-2">${p.description || ''}</p>
+        </div>
+      `;
+    }
+
+    // -------------------- chat rendering --------------------
+    function addLine(role, text) {
+      const div = document.createElement('div');
+      div.className = 'chat-line';
+      if (role === 'bot') {
+        div.innerHTML = `<span class="glow-green">BOT &gt;</span> <span class="text-gray-200">${escapeHTML(text)}</span>`;
+      } else if (role === 'user') {
+        div.innerHTML = `<span class="text-amber-400">YOU &gt;</span> <span class="text-gray-300">${escapeHTML(text)}</span>`;
+      } else if (role === 'system') {
+        div.innerHTML = `<span class="text-gray-600">// ${escapeHTML(text)}</span>`;
+      } else if (role === 'error') {
+        div.innerHTML = `<span class="glow-red">ERR &gt;</span> <span class="text-red-300">${escapeHTML(text)}</span>`;
+      }
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function escapeHTML(s) {
+      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    function renderSegmentation(strategy, modifiers) {
+      strategyEl.textContent = strategy;
+      modifiersEl.innerHTML = Object.entries(modifiers).map(([k, v]) =>
+        `<span class="bg-gray-800 border border-gray-700 text-gray-300 text-[10px] font-mono px-2 py-0.5 rounded">${k}:${v}</span>`
+      ).join(' ');
+      segmentPanel.classList.remove('hidden');
+    }
+
+    function renderOutcome(p) {
+      const o = p.outcome;
+      const detail = o.outcome_detail || {};
+      const filled = Object.entries(detail).filter(([k, v]) => v !== null && v !== '' && v !== undefined);
+      const detailHTML = filled.length
+        ? filled.map(([k, v]) => `<div><span class="text-gray-500">${k}:</span> <span class="text-gray-200">${escapeHTML(String(v))}</span></div>`).join('')
+        : '<div class="text-gray-600">(none)</div>';
+      outcomeBody.innerHTML = `
+        <div class="space-y-2">
+          <div>
+            <div class="text-gray-500 mb-1">outcome:</div>
+            <div class="glow-green">${o.outcome}</div>
+          </div>
+          <div>
+            <div class="text-gray-500 mb-1">detail:</div>
+            <div class="space-y-0.5">${detailHTML}</div>
+          </div>
+          <div class="pt-2 border-t border-gray-700 grid grid-cols-2 gap-1 text-[11px] text-gray-400">
+            <div><span class="text-gray-500">turns:</span> ${o.turns ?? '—'}</div>
+            <div><span class="text-gray-500">dur:</span> ${(p.duration_seconds || 0).toFixed(1)}s</div>
+            <div><span class="text-gray-500">in tok:</span> ${p.llm_input_tokens}</div>
+            <div><span class="text-gray-500">out tok:</span> ${p.llm_output_tokens}</div>
+            <div class="col-span-2"><span class="text-gray-500">cost:</span> <span class="glow-amber">₹${p.estimated_inr_per_call?.toFixed(2) ?? '—'}</span></div>
+          </div>
+        </div>`;
+      outcomePanel.classList.remove('hidden');
+    }
+
+    // -------------------- start call --------------------
+    startBtn.addEventListener('click', async () => {
+      const personaId = personaSel.value;
+      if (!personaId) return;
+      chat.innerHTML = '';
+      addLine('system', `starting ${voiceMode ? 'voice' : 'text'} call for ${personaId}...`);
+      outcomePanel.classList.add('hidden');
+      startBtn.disabled = true;
+      startBtn.textContent = '… starting';
+      try {
+        const res = await fetch('/api/call/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ persona_id: personaId, voice_mode: voiceMode }),
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          addLine('error', 'call blocked: ' + (err.detail || res.statusText));
+          startBtn.disabled = false;
+          startBtn.textContent = '▶ START CALL';
+          return;
+        }
+        const data = await res.json();
+        currentCallId = data.call_id;
+        // CRM panel already populated from dropdown; just refresh segmentation
+        renderSegmentation(data.strategy, data.modifiers);
+        if (voiceMode) {
+          sendForm.classList.add('hidden');
+          voiceControls.classList.remove('hidden');
+          voiceControls.classList.add('flex');
+          await setupAudio();
+        } else {
+          userInput.disabled = false;
+          sendBtn.disabled = false;
+          userInput.focus();
+        }
+        endBtn.classList.remove('hidden');
+        startBtn.textContent = '● LIVE';
+        openStream(data.call_id);
+      } catch (e) {
+        addLine('error', e.message);
+        startBtn.disabled = false;
+        startBtn.textContent = '▶ START CALL';
+      }
+    });
+
+    // -------------------- SSE stream --------------------
+    function openStream(callId) {
+      eventSource = new EventSource(`/api/call/${callId}/stream`);
+      eventSource.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        if (data.type === 'bot') {
+          addLine('bot', data.text);
+          if (voiceMode && data.audio_b64) {
+            playBase64Audio(data.audio_b64, data.sample_rate || 22050);
+          }
+        } else if (data.type === 'fsm') {
+          fsmIndicator.textContent = 'state: ' + data.state;
+        } else if (data.type === 'end') {
+          renderOutcome(data.payload);
+          userInput.disabled = true;
+          sendBtn.disabled = true;
+          startBtn.disabled = false;
+          startBtn.textContent = '▶ START CALL';
+          endBtn.classList.add('hidden');
+          fsmIndicator.textContent = '— ended —';
+          addLine('system', 'call closed.');
+          eventSource.close();
+        } else if (data.type === 'error') {
+          addLine('error', data.message);
+          eventSource.close();
+        }
+      };
+      eventSource.onerror = () => { /* heartbeats keep this alive */ };
+    }
+
+    // -------------------- text send --------------------
+    sendForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = userInput.value.trim();
+      if (!text || !currentCallId) return;
+      addLine('user', text);
+      userInput.value = '';
+      try {
+        await fetch(`/api/call/${currentCallId}/send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text }),
+        });
+      } catch (err) {
+        addLine('error', err.message);
+      }
+    });
+
+    endBtn.addEventListener('click', async () => {
+      if (!currentCallId) return;
+      await fetch(`/api/call/${currentCallId}/end`, { method: 'POST' });
+    });
+
+    // -------------------- voice: record → WAV → upload --------------------
+    let audioContext = null;
+    let mediaStream = null;
+    let workletNode = null;
+    let captureBuffer = [];
+    let recording = false;
+    const TARGET_SR = 16000;
+
+    async function setupAudio() {
+      voiceStatus.textContent = 'requesting mic…';
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            channelCount: 1,
+            sampleRate: TARGET_SR,
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+        });
+        audioContext = new AudioContext({ sampleRate: TARGET_SR });
+        voiceStatus.textContent = 'mic ready — hold to speak';
+      } catch (err) {
+        addLine('error', 'mic permission denied: ' + err.message);
+        voiceStatus.textContent = 'mic denied';
+      }
+    }
+
+    micBtn.addEventListener('mousedown', startRecording);
+    micBtn.addEventListener('touchstart', startRecording);
+    micBtn.addEventListener('mouseup', stopRecording);
+    micBtn.addEventListener('mouseleave', () => { if (recording) stopRecording(); });
+    micBtn.addEventListener('touchend', stopRecording);
+
+    async function startRecording() {
+      if (recording || !audioContext) return;
+      recording = true;
+      captureBuffer = [];
+      micBtn.classList.add('recording');
+      micLabel.textContent = 'RELEASE TO SEND';
+      voiceStatus.textContent = '● recording';
+
+      const source = audioContext.createMediaStreamSource(mediaStream);
+      const processor = audioContext.createScriptProcessor(4096, 1, 1);
+      processor.onaudioprocess = (e) => {
+        if (!recording) return;
+        const ch = e.inputBuffer.getChannelData(0);
+        captureBuffer.push(new Float32Array(ch));
+      };
+      source.connect(processor);
+      processor.connect(audioContext.destination);
+      workletNode = { source, processor };
+    }
+
+    async function stopRecording() {
+      if (!recording) return;
+      recording = false;
+      micBtn.classList.remove('recording');
+      micLabel.textContent = 'HOLD TO SPEAK';
+      voiceStatus.textContent = 'transcribing…';
+
+      if (workletNode) {
+        try { workletNode.processor.disconnect(); workletNode.source.disconnect(); } catch (e) {}
+      }
+
+      // Concatenate Float32Array chunks
+      const totalLen = captureBuffer.reduce((s, b) => s + b.length, 0);
+      if (totalLen < TARGET_SR * 0.3) {
+        voiceStatus.textContent = 'too short — try again';
+        return;
+      }
+      const merged = new Float32Array(totalLen);
+      let off = 0;
+      for (const b of captureBuffer) { merged.set(b, off); off += b.length; }
+
+      const wav = encodeWAV(merged, TARGET_SR);
+      const blob = new Blob([wav], { type: 'audio/wav' });
+      const form = new FormData();
+      form.append('audio', blob, 'utt.wav');
+
+      try {
+        const res = await fetch(`/api/call/${currentCallId}/audio_in`, { method: 'POST', body: form });
+        if (!res.ok) { voiceStatus.textContent = 'stt error: ' + res.status; return; }
+        const data = await res.json();
+        addLine('user', data.transcript || '(no transcript)');
+        voiceStatus.textContent = 'sent.';
+      } catch (e) {
+        voiceStatus.textContent = 'upload failed';
+      }
+    }
+
+    // Float32 PCM → 16-bit WAV bytes
+    function encodeWAV(samples, sampleRate) {
+      const numFrames = samples.length;
+      const buffer = new ArrayBuffer(44 + numFrames * 2);
+      const view = new DataView(buffer);
+      const writeStr = (off, s) => { for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i)); };
+      writeStr(0, 'RIFF');
+      view.setUint32(4, 36 + numFrames * 2, true);
+      writeStr(8, 'WAVE');
+      writeStr(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);                // PCM
+      view.setUint16(22, 1, true);                // mono
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * 2, true);   // byteRate
+      view.setUint16(32, 2, true);                // blockAlign
+      view.setUint16(34, 16, true);               // bitsPerSample
+      writeStr(36, 'data');
+      view.setUint32(40, numFrames * 2, true);
+      let off = 44;
+      for (let i = 0; i < numFrames; i++, off += 2) {
+        const s = Math.max(-1, Math.min(1, samples[i]));
+        view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+      }
+      return buffer;
+    }
+
+    // Base64 (int16 PCM mono) → playable AudioBuffer
+    function playBase64Audio(b64, sampleRate) {
+      try {
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        const pcm = new Int16Array(bytes.buffer);
+        const f32 = new Float32Array(pcm.length);
+        for (let i = 0; i < pcm.length; i++) f32[i] = pcm[i] / 32768;
+        const ctx = audioContext || new AudioContext({ sampleRate });
+        const buf = ctx.createBuffer(1, f32.length, sampleRate);
+        buf.copyToChannel(f32, 0);
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(ctx.destination);
+        src.start();
+      } catch (e) {
+        addLine('error', 'audio playback: ' + e.message);
+      }
+    }
+
+    loadPersonas();
+  </script>
+</body>
+</html>

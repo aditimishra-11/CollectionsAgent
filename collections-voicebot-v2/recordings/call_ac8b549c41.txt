@@ -1,0 +1,7 @@
+ASSISTANT: Hi, this is from Mumbai Bank — calling about your credit card. This call may be recorded for quality. I see this cycle's payment is still pending — wanted to check in. Everything alright? Let's see how we can sort it out together.
+USER: Why are you calling?
+ASSISTANT: I'm calling about your credit card payment for this cycle, which is still pending. Is there any particular reason it hasn't been paid yet? Let's see how we can sort it out.
+USER: I don't have money, I cannot give money right now, call later.
+ASSISTANT: I hear you. Is everything okay at your end? We'd rather understand and help.
+USER: No, I have to pay my children's school fees now, I cannot make the payment right now. Call me next week.
+ASSISTANT: I understand the situation with school fees. I'll arrange for a colleague to call you next week to discuss options that might help. Take care.

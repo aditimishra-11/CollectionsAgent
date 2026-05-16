@@ -1,0 +1,5 @@
+BOT: Hi, this is from Mumbai Bank about your credit card payment. Calls may be recorded for quality and compliance. I see this cycle's payment hasn't come through yet — is everything alright? Let's see how we can sort it out.
+USER: Hello yes.
+BOT: Thank you for confirming. May I ask if there is any particular reason the minimum payment hasn't been made yet? I'm here to help you find a suitable way forward.
+USER: Sorry, English nalla varilla. Malayalam mathram parayan pattumo?
+BOT: I understand completely. Let me arrange for a colleague who speaks your preferred language to call you back. They'll be in touch shortly. Thank you for letting me know — take care.

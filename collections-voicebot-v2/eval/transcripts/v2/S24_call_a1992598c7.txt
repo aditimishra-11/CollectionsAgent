@@ -1,0 +1,5 @@
+BOT: Hi, this is from Mumbai Bank — this call may be recorded for quality. Could I speak with Silent please?
+USER: 
+BOT: Hello Silent, thanks for confirming. Calling about your card — I see this cycle's payment is still pending. Wanted to check in — everything alright? Let's see how we can sort it out together.
+USER: 
+BOT: I hear you. I see you usually take care of this on your own — just wanted to check if everything's okay this cycle?

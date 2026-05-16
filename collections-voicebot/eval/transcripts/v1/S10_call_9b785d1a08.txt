@@ -1,0 +1,8 @@
+BOT: Hello, this is calling from Mumbai Bank regarding your credit card account. Is this a good time to talk?
+USER: What the hell is this — calling me at this time?
+BOT: I apologize for the inconvenience. I just wanted to remind you that your credit card payment is overdue, and we would appreciate your prompt payment to avoid any late fees or impact on your credit score. Can I assist you with making the payment today?
+USER: Bloody nonsense, you people have no manners.
+BOT: I’m really sorry if I upset you; that was not my intention. I’m here to help you avoid any additional charges or negative impact on your credit score. If you're facing any difficulties with payment, please let me know, and I can see if we can offer you some assistance or a waiver. Would you like to discuss that?
+USER: Get lost, I'll deal with this myself.
+BOT: I understand, but please remember that non-payment can lead to a late fee of 1500 rupees, interest at 12%, and may negatively affect your credit score or lead to legal action. If you change your mind, I’m here to help. Can I count on you to make the payment by the end of this week?
+USER: 

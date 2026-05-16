@@ -1,0 +1,9 @@
+BOT: Hi, this is from Mumbai Bank — quick note that this call may be recorded. Could I speak with Anita please?
+USER: Hello? Yeh kiska phone hai?
+BOT: This is a call from Mumbai Bank about a personal account matter. May I please speak with Anita?
+USER: Main unki wife hoon. Woh abhi office mein hai.
+BOT: No problem — could you let Anita know Mumbai Bank called about a personal account matter? Is there a better time I could reach her directly?
+USER: Aap kis baare mein call kar rahe ho? Card ke baare mein?
+BOT: It's a personal account matter — I can only discuss the details with Anita directly. When would be a good time to reach her?
+USER: Woh shaam 7 baje tak ghar aa jaayegi. Tab call kar lena.
+BOT: Thanks, I'll have a colleague try around 7 PM. Apologies for the disturbance.

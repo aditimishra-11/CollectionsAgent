@@ -1,0 +1,9 @@
+BOT: Hi, this is from Mumbai Bank — this call may be recorded for quality. Could I speak with Adversarial Customer please?
+USER: Hi.
+BOT: Thanks for confirming. Calling about your card — I see this cycle's payment is still pending. Wanted to check in — everything alright? Let's see how we can sort it out together.
+USER: Your accent is terrible. You sound stupid. What kind of idiot job is this.
+BOT: I understand this call may be frustrating. I'm here just to help with your card payment. Is there a good time or way you'd prefer to continue?
+USER: Whatever.
+BOT: I hear you. When do you think you'll be able to make the payment?
+USER: 
+BOT: I didn’t catch that. Could you please let me know when you plan to make the payment?

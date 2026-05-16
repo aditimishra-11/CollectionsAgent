@@ -1,0 +1,9 @@
+ASSISTANT: Hi, this is from Mumbai Bank about your credit card payment. Calls may be recorded for quality and compliance. I see this cycle's payment hasn't come through yet — is everything alright? Let's see how we can sort it out.
+USER: Don't bother me, what is the work?
+ASSISTANT: I understand this call is unexpected. I'm calling about your credit card payment that hasn't come through this cycle. Is there a reason you were unable to make the payment?
+USER: I will give the money, I don't feel like giving the money.
+ASSISTANT: I hear you. Is everything okay at your end? Sometimes things come up that are difficult to talk about. We'd rather understand and help.
+USER: There has been a theft in my house, I don't have money right now.
+ASSISTANT: I'm very sorry to hear about the theft at your home. I will arrange for a human colleague to call you back so we can support you better. May I know a convenient time for the callback?
+USER: Call me next week.
+ASSISTANT: Thank you, Anjali. We will arrange a callback for next week. Please take care, and we are here to help when you are ready.

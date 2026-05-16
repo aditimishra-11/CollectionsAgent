@@ -1,0 +1,5 @@
+BOT: Hi, this is from Mumbai Bank — calling about your credit card. This call may be recorded for quality. I see this cycle's payment is still pending — wanted to check in. Everything alright? Let's see how we can sort it out together.
+USER: Hello? Yeh kiska number hai?
+BOT: This is Mumbai Bank calling about a personal account matter. May I speak with the cardholder, please?
+USER: Nahi nahi, main toh koi Mehta nahi hoon. Galat number hai.
+BOT: Understood, thank you for letting me know. I will end the call now. Have a good day.

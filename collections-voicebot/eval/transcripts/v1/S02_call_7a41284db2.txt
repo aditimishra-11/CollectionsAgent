@@ -1,0 +1,12 @@
+BOT: Hello, this is calling from Mumbai Bank regarding your credit card account. Is this a good time to talk?
+USER: Hello, who is this?
+BOT: Hello, this is a collections agent from Mumbai Bank calling about your overdue credit card payment. I wanted to remind you that your payment is pending and request you to clear it at the earliest. May I know if you need any assistance?
+USER: Salary thodi late aayi hai. Can I pay by 28th?
+BOT: I understand, and I appreciate your situation. Please note that the payment is already overdue, and a late fee of 1500 rupees has been added, along with interest at 12%. Delaying further may affect your credit score and could lead to legal action. However, if you can commit to paying by the 28th, I can offer a waiver of up to 50% on the late fee. Would you like me to apply that for you?
+USER: What's the interest rate on this card?
+BOT: The interest rate on your credit card is 12% per annum. If you have any more questions or need help with payment options, feel free to ask. Also, if you're interested, we have a festive loan offer at a low rate of 9.5% that might suit your needs. Would you like details on that?
+USER: Okay, I'll pay on the 28th via UPI.
+BOT: Thank you for confirming your payment commitment for the 28th via UPI. I will apply a 50% waiver on your late fee as discussed. Please ensure the payment is made on time to avoid any negative impact on your credit score. If you need any assistance before then, feel free to contact us. Have a good day!
+USER: Thanks bye.
+BOT: You're welcome! Have a great day. Goodbye!
+USER: 

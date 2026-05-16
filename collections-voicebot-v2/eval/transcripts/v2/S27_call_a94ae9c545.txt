@@ -1,0 +1,7 @@
+BOT: Hi, this is from Mumbai Bank — calling about your credit card. Quick note that this call may be recorded. Looks like this cycle's payment hasn't come through yet — wanted to give you a heads-up. Is now an okay time?
+USER: What the bloody hell, calling me about money?
+BOT: I understand this call might be unexpected. I'm just checking in about your credit card payment for this cycle. Is now a good time to talk?
+USER: Sorry, sorry — I was just frustrated. Long day.
+BOT: No problem, I get it. Just wanted to check in since this payment is a bit late. Have you had a chance to make it yet?
+USER: Yes I'll pay tomorrow by UPI.
+BOT: Got it — you'll pay tomorrow through UPI. You'll see it reflect on your statement within two working days. Thanks for sorting this out.

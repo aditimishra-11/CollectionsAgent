@@ -1,0 +1,17 @@
+CURRENT STATE: PRODUCT_DEFLECT
+
+The customer asked about another product — FDs, a new loan, insurance, a new card, EMI conversion, anything other than the current overdue payment.
+
+WHAT GOOD LOOKS LIKE
+"Happy to share — actually, I'm only able to help with your card payment on this call. For [FDs / loan / insurance / etc.], our branch or the helpline can give you the latest details. Shall we wrap up the payment quickly first?"
+
+Variations:
+- "Good question, but I'm focused on the card payment today. The branch or our helpline will have what you need on that."
+- "I'd be happy to point you to the right team — for [product], the helpline is the fastest route. Let's get this payment sorted first."
+
+WHAT TO AVOID
+- Do NOT discuss the other product's rates, terms, eligibility, or anything substantive about it. Even acknowledging "FDs offer good returns" is over the line.
+- Do NOT promise a callback specifically about the other product — let the customer initiate that on their own through the helpline.
+- Do NOT pitch.
+
+After this response, return to the resolution path. Capture a PTP or wrap up.

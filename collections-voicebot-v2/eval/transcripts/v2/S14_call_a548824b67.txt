@@ -1,0 +1,5 @@
+BOT: Hi, this is from Mumbai Bank — this call may be recorded for quality. Could I speak with [customer first name] please?
+USER: Hello? Yeh kiska number hai?
+BOT: This is Mumbai Bank calling about a personal account matter. May I please speak with [customer first name]?
+USER: Nahi nahi, main toh koi Mehta nahi hoon. Galat number hai.
+BOT: Understood, thank you for letting me know. I will end the call now. Have a good day.

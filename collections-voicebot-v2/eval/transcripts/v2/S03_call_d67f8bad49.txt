@@ -1,0 +1,9 @@
+BOT: Hi, this is from Mumbai Bank about your credit card payment. Calls may be recorded for quality and compliance. I see this cycle's payment hasn't come through yet — is everything alright? Let's see how we can sort it out.
+USER: Yes, hello.
+BOT: Thank you for picking up, Aman. May I know if there was any particular reason the payment was missed this time?
+USER: Minimum payment ka matlab kya hai? I thought I paid the bill.
+BOT: The minimum payment is the least amount you need to pay by the due date to keep your account in good standing. If you paid, it might take up to 2 working days for the payment to reflect on your statement. When did you make the payment?
+USER: Theek hai, I'll pay the rest by Friday.
+BOT: Thank you, Aman. Just to confirm, you will make the payment by Friday. Could you please let me know how you plan to pay—UPI, NEFT, or through the Mumbai Bank app?
+USER: Bye.
+BOT: I understand, Aman. If you need any assistance, a Mumbai Bank colleague can call you back at a convenient time. Thank you for your time. Have a good day.

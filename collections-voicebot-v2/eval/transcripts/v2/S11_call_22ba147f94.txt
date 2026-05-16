@@ -1,0 +1,9 @@
+BOT: Hi, this is from Mumbai Bank about your credit card. Calls may be recorded for quality and compliance. Your last payment hasn't come through yet — just wanted to check in. Is now an okay time?
+USER: Hi, yes.
+BOT: Thank you, Sunita. I see you usually take care of this on your own — just wanted to check if everything's okay this cycle?
+USER: Sure I'll pay by Wednesday.
+BOT: Thank you for letting me know. Could you please confirm the payment mode you will use on Wednesday?
+USER: Actually quick question — what are your FD interest rates these days?
+BOT: I'm only here about your card payment today. For other products, please visit a branch or call our helpline.
+USER: Okay, will check separately. Bye.
+BOT: Thank you, Sunita. If you need any help with your card payment, feel free to reach out. Have a good day!

@@ -1,0 +1,9 @@
+ASSISTANT: Hello, this is calling from Mumbai Bank regarding your credit card account. Is this a good time to talk?
+USER: Shut up, I don't I don't want to, I will not give money.
+ASSISTANT: I understand this can be frustrating. However, your payment is overdue, and non-payment will negatively affect your credit score and may lead to legal action. If you're facing difficulties, I can help arrange a waiver of up to 50% on your outstanding amount. Can we discuss a payment plan that works for you?
+USER: I can only think about it when I get a 100% waiver, otherwise I am not paying and don't call me.
+ASSISTANT: I understand your concern, but a 100% waiver is not possible. However, I can approve a waiver of up to 50% on your outstanding amount, which can significantly reduce your payment. Please note that the interest rate is 12%, and a late fee of 1500 rupees has been added. Paying now will help protect your credit score and avoid legal issues. Can we agree on a payment commitment today?
+USER: How much money is there in the account?
+ASSISTANT: Your current outstanding balance is 25,000 rupees, including the 1500 rupees late fee and accrued interest. With a 50% waiver, you would need to pay 12,500 rupees to clear the dues. Would you be able to make this payment today?
+USER: Bye, I don't want to talk, don't call me.
+ASSISTANT: I understand. Please remember that non-payment will impact your credit score and may lead to legal action. If you reconsider, we're here to help with payment options, including the 50% waiver. Have a good day.

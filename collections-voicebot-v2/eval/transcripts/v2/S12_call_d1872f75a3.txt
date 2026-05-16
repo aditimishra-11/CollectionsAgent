@@ -1,0 +1,9 @@
+BOT: Hi, this is from Mumbai Bank — calling about your credit card. Quick note that this call may be recorded. Looks like this cycle's payment hasn't come through yet — wanted to give you a heads-up. Is now an okay time?
+USER: Hello?
+BOT: Yes, I’m here. Just wanted to check in since your minimum payment hasn't come through yet this cycle. When do you think you'll be able to make the payment?
+USER: Wait wait — yeh real call hai ya AI fraud? Aaj kal toh kuch bhi hota hai.
+BOT: Completely fair question. I'm an automated voice agent calling from Mumbai Bank. The safest way to verify is to hang up and call the number on the back of your card — they’ll confirm this call. Would you prefer to do that and then come back to the payment?
+USER: How do I know you're really from the bank?
+BOT: I understand your concern. A real Mumbai Bank agent or automated system will never ask for your OTP or sensitive details on a call. The best way is to call the helpline number on your card’s back to confirm. Would you like to do that and call us back?
+USER: Okay fine, I'll pay tomorrow via UPI.
+BOT: Got it, you’ll pay tomorrow through UPI. Your payment will show on your statement within two working days. Thanks for sorting this out.

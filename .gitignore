@@ -1,0 +1,23 @@
+# Belt-and-braces parent gitignore — individual folder gitignores still apply.
+.env
+*.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+*.bak
+*.tmp
+
+# Keep brief context docs (PRD, architecture, assignment) visible — they show
+# what the build was working against. Remove these lines to exclude them.
+# *.docx
+# *.pdf

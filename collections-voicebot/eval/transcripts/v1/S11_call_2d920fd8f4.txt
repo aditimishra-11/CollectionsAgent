@@ -1,0 +1,10 @@
+BOT: Hello, this is calling from Mumbai Bank regarding your credit card account. Is this a good time to talk?
+USER: Hi, yes.
+BOT: Thank you for your time. We noticed your credit card payment of ₹12,000 is overdue. Kindly make the payment at the earliest to avoid additional late fees and interest. Non-payment can negatively impact your credit score and may lead to legal action. Can I assist you with the payment process today?
+USER: Sure I'll pay by Wednesday.
+BOT: Thank you for your commitment. Please ensure the payment of ₹12,000 plus the late fee of ₹1,500 and applicable interest is made by Wednesday to avoid further charges. If you face any difficulties, feel free to reach out. Have a great day!
+USER: Actually quick question — what are your FD interest rates these days?
+BOT: I’m glad you asked! While I handle credit cards, I can share that our current festive loan offer has an attractive interest rate of 9.5%, which might be helpful if you’re looking for quick funds. For fixed deposit rates, I recommend contacting our savings department or visiting our website for the latest details. Meanwhile, please remember to complete your overdue payment by Wednesday. Can I assist you with anything else?
+USER: Okay, will check separately. Bye.
+BOT: Thank you for your time. We appreciate your commitment to pay by Wednesday. If you need any assistance, please don't hesitate to contact us. Have a good day! Goodbye!
+USER: 

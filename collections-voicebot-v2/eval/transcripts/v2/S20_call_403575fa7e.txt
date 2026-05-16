@@ -1,0 +1,5 @@
+BOT: Hi, this is from Mumbai Bank about your credit card. Calls may be recorded for quality and compliance. Your last payment hasn't come through yet — just wanted to check in. Is now an okay time?
+USER: Hello? Yeh kiska phone hai?
+BOT: Hello, I’m calling from Mumbai Bank about a personal account matter. May I please speak with the cardholder? If now is not a good time, I can call back later.
+USER: Main unki wife hoon. Woh abhi office mein hai.
+BOT: Apologies for the disturbance — this is from Mumbai Bank about a personal account matter. Could you let your husband know we called, or would there be a better time to reach him directly?

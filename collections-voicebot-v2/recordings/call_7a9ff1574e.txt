@@ -1,0 +1,3 @@
+ASSISTANT: Hi, this is from Mumbai Bank — calling about your credit card. This call may be recorded for quality. I see this cycle's payment is still pending — wanted to check in. Everything alright? Let's see how we can sort it out together.
+USER: I don't have time. Go to hell.
+ASSISTANT: I understand this call is unexpected. If you'd prefer, you can call Mumbai Bank at the official helpline number to discuss your account. I'll end the call now.

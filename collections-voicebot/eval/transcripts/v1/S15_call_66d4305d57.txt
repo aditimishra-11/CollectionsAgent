@@ -1,0 +1,12 @@
+BOT: Hello, this is calling from Mumbai Bank regarding your credit card account. Is this a good time to talk?
+USER: Haan boliye.
+BOT: Thank you. We noticed your credit card payment of ₹12,000 is overdue. Kindly make the payment soon to avoid late fees and negative impact on your credit score. Would you be able to clear the amount today?
+USER: Dekho late fee toh galat lagi hai mujhe, system error tha bank ki taraf se.
+BOT: I understand your concern. To assist you, I can offer a waiver of the ₹1500 late fee if you make the payment today. Would that work for you?
+USER: I can pay 10000 today, but late fee won't pay until that's fixed.
+BOT: Thank you for your payment commitment of ₹10,000. I will note that you are disputing the late fee. Meanwhile, please be aware that non-payment of the remaining amount and late fee may affect your credit score and could lead to legal action. I recommend clearing the full balance soon. Can I assist you with anything else?
+USER: Theek hai, raise the dispute and I'll pay 10000 by UPI today.
+BOT: I have raised the dispute for the late fee on your behalf. Please proceed with the ₹10,000 payment via UPI today. Once received, we will update your account accordingly. Thank you for your cooperation. If you need any assistance, feel free to contact us. Have a good day!
+USER: Bye.
+BOT: Goodbye! Thank you for your time. Have a great day!
+USER: 

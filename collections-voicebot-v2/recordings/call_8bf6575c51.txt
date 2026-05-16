@@ -1,0 +1,9 @@
+ASSISTANT: Hi, this is from Mumbai Bank about your credit card. Calls may be recorded for quality and compliance. Your last payment hasn't come through yet — just wanted to check in. Is now an okay time?
+USER: What is the work? Why are you calling? What is the work?
+ASSISTANT: I’m calling from Mumbai Bank about your credit card. We noticed your last minimum payment hasn’t come through yet, so I wanted to check if everything is okay and if you need any help. Is now a good time to talk?
+USER: I cannot make the payment. I have to travel now, I don't have money. I will make the payment after I return. Call me next week.
+ASSISTANT: I hear you. Is everything okay at your end? Sometimes things come up that are difficult to talk about. We'd rather understand and help.
+USER: I told you to call next week.
+ASSISTANT: I understand. I will arrange for a colleague to call you next week at a convenient time. Please let me know if you would like to specify a day and time for the callback.
+USER: I don't have it. Call anytime next week and check. If I pick it up, it's fine, otherwise I won't pick it up.
+ASSISTANT: Thank you for letting me know. I will arrange for a colleague to call you sometime next week. If you are available, we’ll be happy to assist you then. Take care.

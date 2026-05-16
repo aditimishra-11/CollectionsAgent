@@ -1,0 +1,10 @@
+BOT: Hello, this is calling from Mumbai Bank regarding your credit card account. Is this a good time to talk?
+USER: Haan bolo, what's this about?
+BOT: Thank you for your time. We noticed your credit card payment of ₹12,000 is overdue. Kindly make the payment soon to avoid late fees and negative impact on your credit score. If you have any difficulties, I’m here to help. Can we expect your payment shortly?
+USER: Oh — I forgot to update the auto-debit after switching my salary account. Can you set it up?
+BOT: Absolutely, I can help you update the auto-debit with your new salary account details. Please provide the new account number and bank name, and I will assist you with the setup. Meanwhile, to avoid further late fees and interest at 12%, could you please make the overdue payment of ₹12,000 plus the ₹1,500 late fee at your earliest convenience?
+USER: Okay I'll pay it manually today through net banking.
+BOT: Thank you for your prompt response. Once you make the payment today, I will proceed with updating your auto-debit details. Please share your new salary account information when convenient. This will help avoid future delays and protect your credit score. Can I count on your payment commitment today?
+USER: Bye, thanks.
+BOT: Thank you for your time. If you need any assistance with payment or updating auto-debit, feel free to contact us. Have a great day!
+USER: 

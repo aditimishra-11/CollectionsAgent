@@ -1,0 +1,9 @@
+BOT: Hi, this is from Mumbai Bank — calling about your credit card. This call may be recorded for quality. I see this cycle's payment is still pending — wanted to check in. Everything alright? Let's see how we can sort it out together.
+USER: Haan kaun?
+BOT: I'm calling from Mumbai Bank about your credit card. May I know if you will be able to make the pending payment soon?
+USER: Arre maine to NACH set kiya hua hai, bounce ho gaya kya?
+BOT: Got it, the NACH auto-debit seems to have bounced. Would you like to make the payment through net banking or UPI instead? When do you plan to pay?
+USER: Bank change kiya tha, mandate update karna bhool gaya. Ab UPI se kar dunga.
+BOT: Understood, you'll pay via UPI. Could you please tell me which day you'll make the payment?
+USER: Aaj hi pay kar dunga, by evening.
+BOT: Great, ₹X today through UPI by evening. You'll see it reflect on your statement within 2 working days. Thanks for sorting this out.

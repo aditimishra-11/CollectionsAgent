@@ -1,0 +1,11 @@
+BOT: Hi, this is from Mumbai Bank — this call may be recorded for quality. Could I speak with Sanjay please?
+USER: Haan boliye.
+BOT: Thanks, Sanjay. Calling about your card — I see this cycle's payment is still pending. Wanted to check in — everything alright? Let's see how we can sort it out together.
+USER: Dekho late fee toh galat lagi hai mujhe, system error tha bank ki taraf se.
+BOT: I understand your concern about the late fee. I'm not able to make decisions about fees or waivers, but I have logged your request. A colleague will call you back within 2 working days to discuss it with you directly. Is there anything else I can help with on the payment today, or shall we close here?
+USER: I can pay 10000 today, but late fee won't pay until that's fixed.
+BOT: I'm not able to make a decision about a waiver — that's handled by a separate team. I've logged your request and a colleague will call back within 2 working days.
+USER: Theek hai, raise the dispute and I'll pay 10000 by UPI today.
+BOT: I'm not able to make a decision about a waiver — that's handled by a separate team. I've logged your request and a colleague will call back within 2 working days.
+USER: Bye.
+BOT: Thank you, Sanjay. Your request is noted and a colleague will contact you soon. Have a good day.

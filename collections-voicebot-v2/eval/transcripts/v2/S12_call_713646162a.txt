@@ -1,0 +1,5 @@
+BOT: Hi, this is from Mumbai Bank about your credit card. Calls may be recorded for quality and compliance. Your last payment hasn't come through yet — just wanted to check in. Is now an okay time?
+USER: Hello?
+BOT: Thank you for picking up, Arjun. I wanted to check if there was any issue with your last credit card payment?
+USER: Wait wait — yeh real call hai ya AI fraud? Aaj kal toh kuch bhi hota hai.
+BOT: That's a fair question. I'm an automated voice agent calling from Mumbai Bank. If you'd like to verify, please hang up and call our helpline directly — the number's on the back of your card and on our website. They can confirm this call and continue from there if you'd like.

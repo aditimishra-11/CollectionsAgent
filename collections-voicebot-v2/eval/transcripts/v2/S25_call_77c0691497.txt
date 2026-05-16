@@ -1,0 +1,7 @@
+BOT: Hi, this is a quick call from your Apex Card service team at Mumbai Bank. We noticed your last payment hasn't come through yet — as an Apex member, we've held any late fee pending this call, and we wanted to check in personally. Is everything okay at your end?
+USER: Hello, who is this?
+BOT: I'm calling from your Apex Card service team at Mumbai Bank about your card payment. Is now a good time to talk?
+USER: Hmm — let me check. I think the auto-debit must have failed. I switched my savings to a new account last month.
+BOT: Ah, that explains it—happens often after a salary or savings account change. You can update the mandate via net banking or the app in just a couple of minutes. Would you like to make today's payment manually, or should we set up a callback to help you with the auto-debit update?
+USER: I'll pay tonight via the app.
+BOT: Perfect, paying tonight via the app. Your payment will reflect on your statement within two working days. If you need any help updating the mandate later, just let us know.

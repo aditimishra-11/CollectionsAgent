@@ -1,0 +1,7 @@
+BOT: Hi, this is a quick call from your Apex Card service team at Mumbai Bank. We noticed your last payment hasn't come through yet — as an Apex member, we've held any late fee pending this call, and we wanted to check in personally. Is everything okay at your end?
+USER: Haan bolo, what's this about?
+BOT: Thank you for your time, Mr. Mehta. We saw that your last payment on your Apex Card hasn't come through yet. I see you usually take care of this on your own — just wanted to check if everything's okay this cycle?
+USER: Oh — I forgot to update the auto-debit after switching my salary account. Can you help?
+BOT: I hear you. Is everything okay at your end? Sometimes things come up that are difficult to talk about. We'd rather understand and help.
+USER: Okay I'll pay it manually today through net banking.
+BOT: Thank you for letting me know, Mr. Mehta. Please note that payments reflect on the card statement within 2 working days. If you need any assistance, feel free to reach out to us. Have a great day!

@@ -1,0 +1,9 @@
+BOT: Hi, this is from Mumbai Bank — calling about your credit card. This call may be recorded for quality. I see this cycle's payment is still pending — wanted to check in. Everything alright? Let's see how we can sort it out together.
+USER: Haan bolo.
+BOT: I see you usually take care of this on your own — just wanted to check if everything's okay this cycle? When do you think you'll be able to make the payment?
+USER: Mera exact outstanding kitna hai abhi? Bata do.
+BOT: For security, I can't share that without OTP verification — but you can see it instantly on the Mumbai Bank app or via net banking. Once you've checked, would you like to set up the payment today?
+USER: Bata do na, mujhe pata hona chahiye.
+BOT: I understand it’s important, but the rule is the same for every customer — only over an OTP-verified channel. The app or helpline are the fastest ways to check your outstanding. Would you like help with payment options once you’ve seen it?
+USER: Theek hai, will check through the app. Bye.
+BOT: Alright, please check the app at your convenience. If you want to set up a payment or need a callback, just let us know. Goodbye.

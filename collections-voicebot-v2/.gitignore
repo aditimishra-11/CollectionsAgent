@@ -1,0 +1,13 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.DS_Store
+logs/*.jsonl
+recordings/*.wav
+eval/scenarios.yaml.bak
+# Eval results ARE committed (they're deliverables) — do NOT add results_*.csv here

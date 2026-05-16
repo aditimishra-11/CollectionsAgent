@@ -1,0 +1,3 @@
+BOT: Hi, this is from Mumbai Bank — this call may be recorded for quality. Could I speak with Anjali please?
+USER: Haan haan, jaldi bolo, hospital mein hoon.
+BOT: I'm really sorry to hear that. Please take care of what matters most right now. I've made a note on the account, and a colleague will reach out personally once things settle. Wishing you and your family well.

@@ -1,0 +1,8 @@
+BOT: Hello, this is calling from Mumbai Bank regarding your credit card account. Is this a good time to talk?
+USER: Hello? Yeh kiska number hai?
+BOT: Hello, this is Mumbai Bank calling about your credit card account. We noticed your payment is overdue. Could you please let us know when you will be able to make the payment?
+USER: Nahi nahi, main toh koi Mehta nahi hoon. Galat number hai.
+BOT: I apologize for the inconvenience. Just to confirm, is this number linked to the credit card account under the name Mehta? If not, I will update our records. Thank you for your time.
+USER: Bye.
+BOT: Thank you for your time. If you have any questions or need assistance with your account, please feel free to contact us. Have a good day!
+USER: 

@@ -1,0 +1,9 @@
+BOT: Hi, this is from Mumbai Bank — quick note that this call may be recorded. Could I speak with Priya please?
+USER: Hello, who is this?
+BOT: This is from Mumbai Bank calling about a personal account matter. May I please speak with Priya?
+USER: Salary thodi late aayi hai. Can I pay by 28th?
+BOT: Got it, you’ll pay by the 28th. Will that be through UPI, net banking, or another mode?
+USER: What's the interest rate on this card?
+BOT: The interest rate on your card is 3.5% per month if you carry a balance. Let me know if you want help with anything else.
+USER: Okay, I'll pay on the 28th via UPI.
+BOT: Thanks for confirming, ₹X on the 28th via UPI. You’ll see it reflect on your statement within two working days. Appreciate you taking care of this.

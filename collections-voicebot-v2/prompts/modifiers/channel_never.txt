@@ -1,0 +1,2 @@
+CHANNEL BEHAVIOUR — never self-cures
+This customer doesn't act on reminders alone — the voice call has to do the full work. Be concrete with payment mechanics: walk them through the exact action (UPI to the bank's payee, NEFT to the credit card account, or the bank's app). Get a specific commitment before ending the call.

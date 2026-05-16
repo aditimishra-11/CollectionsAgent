@@ -1,0 +1,12 @@
+BOT: Hello, this is calling from Mumbai Bank regarding your credit card account. Is this a good time to talk?
+USER: Hello?
+BOT: Good day! This is Mumbai Bank calling about your overdue credit card payment. We noticed your payment is pending, and we kindly request you to clear the outstanding amount to avoid any negative impact on your credit score. Can I assist you with the payment process today?
+USER: Wait wait — yeh real call hai ya AI fraud? Aaj kal toh kuch bhi hota hai.
+BOT: I understand your concern. This is an official call from Mumbai Bank regarding your credit card account. If you like, I can verify some details to assure you. May I confirm your full name and the last 4 digits of your card?
+USER: How do I know you're really from the bank?
+BOT: I completely understand your caution. To verify, you can call Mumbai Bank’s official customer service number listed on our website or your card statement after this call. Meanwhile, I can share some details about your account balance and due amount to confirm I have your correct information. Would you like me to do that?
+USER: Okay fine, I'll pay tomorrow via UPI.
+BOT: Thank you for your commitment. Please remember, the outstanding amount includes a late fee of ₹1500 and interest at 12%. Timely payment will help protect your credit score. If you face any issues, feel free to contact us. We appreciate your prompt action. Have a good day!
+USER: Bye.
+BOT: Goodbye! Thank you for your time. We look forward to receiving your payment tomorrow. Have a great day!
+USER: 

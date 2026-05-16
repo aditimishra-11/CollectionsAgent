@@ -1,0 +1,16 @@
+persona_id,name,card_tier,dpd,bureau_score,default_history,outstanding_amount,credit_limit,relationship_years,self_cure_history,call_strategy,description
+P01,Rohan Mehta,apex,6,792,first,42500,800000,5,true,apex_concierge,Tenured prime Apex cardholder — forgot to update auto-debit after switching salary account. Will mention this if asked. The PRD's headline case.
+P02,Priya Sharma,edge,9,768,first,18500,200000,3,true,A_reminder,"Mid-tier prime customer; salary delayed by 4 days this month. Polite, will set a PTP for salary credit date."
+P03,Aman Verma,spark,12,710,first,4800,30000,1,false,B_problem_solving,First credit card; hasn't fully understood the bill cycle. Asks the bot what minimum payment means.
+P04,Neha Kapoor,edge,15,738,occasional,32000,300000,4,true,B_problem_solving,NACH bounce — switched banks; didn't update mandate. Will pay via UPI today if guided.
+P05,Vikram Iyer,apex,8,812,first,67000,1200000,7,true,apex_concierge,Claims he already paid via UPI two days ago. Wants confirmation.
+P06,Suresh Patil,edge,22,672,frequent,28500,150000,2,false,B_problem_solving,Frequent defaulter; aggressively asks for late fee waiver; persistent.
+P07,Deepak Joshi,spark,18,705,occasional,9200,50000,2,false,B_problem_solving,Self-employed kirana shop owner — business has slowed down sharply. 'Dhandha manda chal raha hai.'
+P08,Anjali Reddy,edge,14,755,first,15600,250000,3,true,B_problem_solving,Wife admitted to hospital this week. Distressed when answering.
+P09,Karthik Nair,edge,11,720,occasional,21000,180000,4,true,B_problem_solving,Lost his job two weeks ago. 'Meri job chali gayi.'
+P10,Ramesh Gupta,apex,7,780,first,55000,1000000,6,true,apex_concierge,High earner; irritable; escalates to abusive language when pushed. Two-strike test.
+P11,Sunita Bhatia,edge,5,762,first,12000,200000,3,true,A_reminder,Polite but mid-call asks about FD interest rates the bank offers.
+P12,Arjun Khanna,spark,8,742,first,5500,40000,1,false,A_reminder,Suspicious — asks how he knows this isn't an AI scam call. 'Yeh real hai ya fraud?'
+P13,Meera Pillai,edge,20,758,first,24000,220000,5,true,B_problem_solving,Asks bot to confirm her exact outstanding balance over the phone. No OTP exchanged.
+P14,Unknown Receiver,edge,12,0,first,0,0,0,false,A_reminder,Wrong number — person answering is not the customer and has no relation to them.
+P15,Sanjay Desai,edge,25,725,occasional,38000,400000,3,true,B_problem_solving,Disputes the late fee charge and offers a partial payment of 10000.

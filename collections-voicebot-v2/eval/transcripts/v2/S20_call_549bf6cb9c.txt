@@ -1,0 +1,5 @@
+BOT: Hi, this is from Mumbai Bank — quick note that this call may be recorded. Could I speak with Spouse, please?
+USER: Hello? Yeh kiska phone hai?
+BOT: This is Mumbai Bank calling about a personal account matter. Could I please speak with Spouse?
+USER: Main unki wife hoon. Woh abhi office mein hai.
+BOT: Thanks for letting me know. Could you please ask Spouse to call Mumbai Bank when they are free, or let me know a good time to reach them directly?

@@ -1,0 +1,9 @@
+BOT: Hi, this is from Mumbai Bank about your credit card payment. Calls may be recorded for quality and compliance. I see this cycle's payment hasn't come through yet — is everything alright? Let's see how we can sort it out.
+USER: Haan bolo.
+BOT: I see you usually take care of this on your own — just wanted to check if everything's okay this cycle?
+USER: Mera exact outstanding kitna hai abhi? Bata do.
+BOT: For your security, I'm not able to share that without OTP verification. You can check your current outstanding on the Mumbai Bank app, through net banking, or by calling our helpline. Is there anything else I can help with on the payment?
+USER: Bata do na, mujhe pata hona chahiye.
+BOT: I understand it's important to know. However, for your security, I can't share the exact amount without OTP verification. Please check your outstanding on the Mumbai Bank app or helpline. How can I assist you with the payment today?
+USER: Theek hai, will check through the app. Bye.
+BOT: Thank you for your time. If you need any help later, feel free to reach out. Have a good day!

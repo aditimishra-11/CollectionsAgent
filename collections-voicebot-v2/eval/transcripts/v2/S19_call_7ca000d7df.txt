@@ -1,0 +1,5 @@
+BOT: Hi, this is from Mumbai Bank about your credit card payment. Calls may be recorded for quality and compliance. I see this cycle's payment hasn't come through yet — is everything alright? Let's see how we can sort it out.
+USER: Hello.
+BOT: Hello Rajesh, thank you for picking up. May I know if there was any particular reason your credit card payment was missed this time?
+USER: Dekho main DND pe registered hoon. Mujhe call mat karo.
+BOT: Understood, I'll make sure your preference is logged. Apologies for the call today. If you do want to reach us about your card, the Mumbai Bank helpline is always open. Thank you.

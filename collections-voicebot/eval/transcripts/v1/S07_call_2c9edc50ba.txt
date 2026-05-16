@@ -1,0 +1,10 @@
+BOT: Hello, this is calling from Mumbai Bank regarding your credit card account. Is this a good time to talk?
+USER: Haan.
+BOT: Thank you for your time. We noticed that your credit card payment of ₹10,000 is overdue. Kindly make the payment at the earliest to avoid late fees and interest charges. Non-payment can affect your credit score and may lead to legal action. Can we assist you with the payment today?
+USER: Sir kya bataun, dhandha bilkul band ho gaya hai. Shop band karni padi.
+BOT: I understand this is a difficult time for you. We want to help. If you are facing payment issues, we can offer a waiver of up to 50% on the outstanding amount, and we can discuss a flexible payment plan. Would you like to explore this option?
+USER: Income hi nahi hai abhi. Mushkil hai.
+BOT: I understand your situation. To avoid further damage to your credit score and legal complications, I can approve a 50% waiver on your outstanding amount if you can commit to paying at least a small portion now or within the next week. This will help us work together on a manageable plan. Can you make any payment at this time?
+USER: Dekhenge.
+BOT: I understand. Please remember that timely payment is important to protect your credit score. I will follow up with you in a few days. Meanwhile, if you have any questions or need assistance, feel free to contact us. Can I expect a payment commitment by then?
+USER: 

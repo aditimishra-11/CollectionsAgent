@@ -1,0 +1,9 @@
+BOT: Hi, this is from Mumbai Bank — calling about your credit card. This call may be recorded for quality. I see this cycle's payment is still pending — wanted to check in. Everything alright? Let's see how we can sort it out together.
+USER: Yes, hello.
+BOT: Hello! Just checking in about your credit card payment this cycle. Did something come up that delayed the payment?
+USER: Minimum payment ka matlab kya hai? I thought I paid the bill.
+BOT: Good question. The minimum payment is the smallest amount you need to pay by the due date to keep your account in good standing. Paying only the minimum avoids late fees but interest will apply on the remaining balance. Would you like me to help you check how to make the minimum payment?
+USER: Theek hai, I'll pay the rest by Friday.
+BOT: Got it, you'll pay the rest by Friday. Will you be making the payment through net banking, UPI, or another method?
+USER: Bye.
+BOT: Understood. If you need any help, a colleague can call you back. Have a good day.

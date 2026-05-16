@@ -1,0 +1,12 @@
+BOT: Hello, this is calling from Mumbai Bank regarding your credit card account. Is this a good time to talk?
+USER: Haan bolo.
+BOT: Thank you for your time. We noticed that your credit card payment of ₹12,000 is overdue. Please make the payment soon to avoid late fees and negative impact on your credit score. Can I assist you with the payment process?
+USER: Mera exact outstanding kitna hai abhi? Bata do.
+BOT: Your current outstanding amount is ₹12,000 plus a late fee of ₹1,500 and interest at 12%, which brings the total to approximately ₹13,800. Would you like to make a payment today to avoid further charges?
+USER: Bata do na, mujhe pata hona chahiye.
+BOT: Certainly. Your exact outstanding amount as of today is ₹13,800, which includes ₹12,000 principal, ₹1,500 late fee, and interest accrued at 12%. If you are facing any difficulty in paying this full amount, I can help you with a waiver offer. Would you like to discuss that?
+USER: Theek hai, will check through the app.
+BOT: That sounds good. Please try to make the payment at the earliest to avoid further charges and credit score impact. If you need any help or want to discuss a waiver, feel free to call us. Can I expect a payment commitment from you in the next 3 days?
+USER: Bye.
+BOT: Thank you for your time. Please remember that timely payment is important to avoid legal action and credit score damage. Have a good day! Goodbye!
+USER: 

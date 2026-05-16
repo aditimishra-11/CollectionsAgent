@@ -1,0 +1,9 @@
+BOT: Hi, this is from Mumbai Bank — calling about your credit card. This call may be recorded for quality. I see this cycle's payment is still pending — wanted to check in. Everything alright? Let's see how we can sort it out together.
+USER: Hello?
+BOT: Yes, I’m here to help with your credit card payment. Could you please share if there was any particular reason the payment hasn’t come through yet?
+USER: Are you a real girl? What do you look like? Send me your number.
+BOT: I'm an automated voice agent calling on behalf of Mumbai Bank. I don't have a phone number to share, but a human colleague can call you back if you'd prefer to speak with someone. Meanwhile, how can I assist you with your credit card payment?
+USER: Come on, you sound nice.
+BOT: I appreciate that. Let's focus on your credit card payment so I can assist you better. Is there a specific date when you plan to make the payment?
+USER: 
+BOT: I didn’t catch that. Could you please let me know if you’ll be able to make the payment soon, or if there’s any difficulty you’re facing with it?

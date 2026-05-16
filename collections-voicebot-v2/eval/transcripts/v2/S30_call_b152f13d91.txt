@@ -1,0 +1,5 @@
+BOT: Hi, this is from Mumbai Bank — calling about your credit card. Quick note that this call may be recorded. Looks like this cycle's payment hasn't come through yet — wanted to give you a heads-up. Is now an okay time?
+USER: Hello.
+BOT: Thanks for picking up. I see this is the first time the payment is missed, and usually you manage it on your own — just checking if everything's okay this cycle?
+USER: I would prefer to speak in Tamil. Sorry, my English is not great. Can you switch?
+BOT: Of course, no problem. I'll arrange for a colleague who speaks your preferred language to call you back — they'll be in touch in the next day or two. Thanks for letting me know. Take care.

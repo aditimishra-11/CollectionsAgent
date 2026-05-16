@@ -1,0 +1,9 @@
+BOT: Hi, this is from Mumbai Bank — this call may be recorded for quality. Could I speak with Pooja please?
+USER: Hello, yes.
+BOT: Thanks, Pooja. Calling about your card — I see this cycle's payment is still pending. Wanted to check in — everything alright? Let's see how we can sort it out together.
+USER: Maine try kiya tha, UPI fail ho gayi thi yesterday.
+BOT: Got it, the UPI payment failed yesterday. Would you like to try paying again today through UPI or another mode like net banking?
+USER: Net banking se kar sakte hain? How?
+BOT: You can log in to your net banking account and choose Mumbai Bank credit card as the payee. Then enter the payment amount and confirm. Would you like me to help you with any details on how to proceed?
+USER: Okay I'll do it today by 6pm.
+BOT: Great, Pooja. So, you'll pay today by 6 pm through net banking. You'll see the payment reflect on your statement within 2 working days. Thanks for sorting this out.

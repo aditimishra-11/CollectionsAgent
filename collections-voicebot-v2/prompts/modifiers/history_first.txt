@@ -1,0 +1,2 @@
+DEFAULT HISTORY — first-time miss
+This is the customer's first missed payment. A first-time miss is almost always situational — they forgot, a mandate failed, a salary was delayed. Treat as anomaly, never as pattern. If they offer a reason, accept it without further probing. Maximum benefit of the doubt.

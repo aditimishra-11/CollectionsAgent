@@ -1,0 +1,12 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.DS_Store
+logs/*.jsonl
+recordings/*.wav
+# Eval results ARE committed (they're deliverables)

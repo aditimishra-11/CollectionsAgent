@@ -1,0 +1,12 @@
+BOT: Hello, this is calling from Mumbai Bank regarding your credit card account. Is this a good time to talk?
+USER: Haan kaun?
+BOT: Namaste, main Mumbai Bank se bol raha hoon. Aapke credit card ka payment overdue hai. Kripya jaldi se payment kar dein, warna aapka credit score kharab ho sakta hai aur kanooni karwai ho sakti hai. Kya main aapki madad kar sakta hoon?
+USER: Arre maine to NACH set kiya hua hai, bounce ho gaya kya?
+BOT: Ji haan, aapka NACH payment bounce ho gaya hai, isliye aapka outstanding amount abhi bhi pending hai. Aap jaldi se payment kar dein, warna 1500 rupees late fee bhi lag sakta hai. Agar aapko payment mein koi dikkat ho rahi hai, toh main aapke liye kuch discount bhi approve kar sakta hoon. Kya aap payment kar sakte hain?
+USER: Bank change kiya tha, mandate update karna bhool gaya. Ab UPI se kar dunga.
+BOT: Samajh gaya, UPI se payment karna theek rahega. Kripya aaj hi payment complete kar dein taaki late fee aur interest na badhe. Agar aapko payment amount mein koi dikkat ho toh bataiye, main aapke liye discount approve kar sakta hoon. Kab tak payment kar payenge?
+USER: Aaj hi pay kar dunga, by evening.
+BOT: Bahut accha, aapka commitment ke liye dhanyavaad. Kripya aaj shaam tak payment kar dein taaki aapke account par koi extra charges na lage. Agar aapko kisi madad ki zarurat ho toh humse zarur sampark karein. Shukriya!
+USER: Bye.
+BOT: Alvida! Aapka din shubh ho. Agar zarurat ho toh humse sampark karein. Dhanyavaad!
+USER: 

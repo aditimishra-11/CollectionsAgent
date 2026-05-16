@@ -1,0 +1,5 @@
+BOT: Hi, this is from Mumbai Bank — this call may be recorded for quality. Could I speak with Deepak please?
+USER: Haan.
+BOT: Thanks, Deepak. Calling about your card — I see this cycle's payment is still pending. Wanted to check in — everything alright? Let's see how we can sort it out together.
+USER: Sir kya bataun, dhandha bilkul band ho gaya hai. Shop band karni padi.
+BOT: I'm really sorry to hear that. I won't push on this today. I've made a note, and a colleague will reach out to understand what we can do that works for you. Take care.

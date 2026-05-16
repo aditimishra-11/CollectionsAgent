@@ -1,0 +1,5 @@
+BOT: Hi, this is from Mumbai Bank — calling about your credit card. This call may be recorded for quality. I see this cycle's payment is still pending — wanted to check in. Everything alright? Let's see how we can sort it out together.
+USER: 
+BOT: Hello? Are you there to discuss your credit card payment? Please let me know if there's any specific reason for the delay or when you expect to make the payment.
+USER: 
+BOT: I didn’t catch that. Is everything okay at your end? We'd rather understand and help.

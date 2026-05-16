@@ -1,0 +1,9 @@
+BOT: Hi, this is from Mumbai Bank about your credit card payment. Calls may be recorded for quality and compliance. I see this cycle's payment hasn't come through yet — is everything alright? Let's see how we can sort it out.
+USER: Haan kaun?
+BOT: I’m calling from Mumbai Bank about a personal account matter. May I please speak with Neha Kapoor?
+USER: Arre maine to NACH set kiya hua hai, bounce ho gaya kya?
+BOT: Thank you for letting me know. Sometimes payments take up to 2 working days to reflect. Have you noticed any message from your bank about the NACH bounce?
+USER: Bank change kiya tha, mandate update karna bhool gaya. Ab UPI se kar dunga.
+BOT: Got it, you will pay via UPI. Could you please confirm the exact date when you plan to make this payment?
+USER: Aaj hi pay kar dunga, by evening.
+BOT: Got it—payment via UPI by today evening. Thank you for the update. If you need any help, feel free to reach out. Have a good day!

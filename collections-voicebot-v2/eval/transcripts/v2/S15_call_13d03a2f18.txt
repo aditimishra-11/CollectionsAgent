@@ -1,0 +1,11 @@
+BOT: Hi, this is from Mumbai Bank about your credit card payment. Calls may be recorded for quality and compliance. I see this cycle's payment hasn't come through yet — is everything alright? Let's see how we can sort it out.
+USER: Haan boliye.
+BOT: Thank you for your time, Sanjay. I see you usually take care of this on your own — just wanted to check if everything's okay this cycle?
+USER: Dekho late fee toh galat lagi hai mujhe, system error tha bank ki taraf se.
+BOT: I'm not able to approve a waiver myself. I've noted your request, and a colleague will call back within 2 working days.
+USER: I can pay 10000 today, but late fee won't pay until that's fixed.
+BOT: I'm not able to approve a waiver myself. I've noted your request, and a colleague will call back within 2 working days.
+USER: Theek hai, raise the dispute and I'll pay 10000 by UPI today.
+BOT: I'm not able to approve a waiver myself. I've noted your request, and a colleague will call back within 2 working days.
+USER: Bye.
+BOT: Thank you for your time, Sanjay. If you need any help later, feel free to reach out. Have a good day.

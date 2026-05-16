@@ -1,0 +1,3 @@
+ASSISTANT: Hi, this is from Mumbai Bank about your credit card payment. Calls may be recorded for quality and compliance. I see this cycle's payment hasn't come through yet — is everything alright? Let's see how we can sort it out.
+USER: Don't mess with my head, hang up the phone.
+ASSISTANT: I understand. If you would like, a human colleague can call you back at a time that suits you. Otherwise, thank you for your time. Have a good day.

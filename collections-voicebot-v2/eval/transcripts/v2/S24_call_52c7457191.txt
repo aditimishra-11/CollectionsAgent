@@ -1,0 +1,5 @@
+BOT: Hi, this is from Mumbai Bank about your credit card payment. Calls may be recorded for quality and compliance. I see this cycle's payment hasn't come through yet — is everything alright? Let's see how we can sort it out.
+USER: 
+BOT: Hello, I didn't catch that. Is everything alright with your credit card payment this cycle? I'm here to help if you need any assistance.
+USER: 
+BOT: I hear you. Is everything okay at your end? Sometimes things come up that are difficult to talk about. We'd rather understand and help.

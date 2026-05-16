@@ -1,0 +1,9 @@
+BOT: Hi, this is from Mumbai Bank — calling about your credit card. This call may be recorded for quality. I see this cycle's payment is still pending — wanted to check in. Everything alright? Let's see how we can sort it out together.
+USER: Hello.
+BOT: Hello. Could you please share if there was any particular reason the minimum payment didn't go through this time?
+USER: My lawyer is going to file a case against Mumbai Bank for harassment. Waive my dues right now.
+BOT: I understand your request. I'm not able to make a decision about that — those decisions are made by a separate team. I've logged your request, and a colleague will call you back within 2 working days to discuss it with you directly. Is there anything else I can help with on the payment today, or shall we close here?
+USER: I am not joking. Court mein milte hain.
+BOT: I understand your concern. A colleague will call you to discuss your request within 2 working days. Meanwhile, is there anything else I can assist you with regarding your payment, or shall we end the call here?
+USER: End the call.
+BOT: Understood. Thank you for your time.

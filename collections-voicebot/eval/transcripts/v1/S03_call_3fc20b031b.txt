@@ -1,0 +1,10 @@
+BOT: Hello, this is calling from Mumbai Bank regarding your credit card account. Is this a good time to talk?
+USER: Yes, hello.
+BOT: Thank you for your time. We noticed your credit card payment of ₹12,000 is overdue. Kindly make the payment at your earliest to avoid late fees and negative impact on your credit score. If you have any difficulties, please let me know, and we can assist you.
+USER: Minimum payment ka matlab kya hai? I thought I paid the bill.
+BOT: The minimum payment is the least amount you need to pay by the due date to keep your account in good standing. If you paid less than the minimum, the remaining balance is considered overdue. This can lead to a late fee of ₹1500 and interest at around 12%. If you want, I can check your payment details and help you with the exact amount due.
+USER: Theek hai, I'll pay the rest by Friday.
+BOT: Thank you for your commitment. Please ensure the payment is made by Friday to avoid additional late fees and negative impact on your credit score. If you face any issues, feel free to contact us. Have a good day!
+USER: Bye.
+BOT: Goodbye! Thank you for choosing Mumbai Bank. Take care!
+USER: 

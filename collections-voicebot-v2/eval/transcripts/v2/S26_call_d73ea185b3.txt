@@ -1,0 +1,9 @@
+BOT: Hi, this is from Mumbai Bank about your credit card payment. Calls may be recorded for quality and compliance. I see this cycle's payment hasn't come through yet — is everything alright? Let's see how we can sort it out.
+USER: Haan.
+BOT: Thank you for confirming. Could you please share if there is any specific reason the payment hasn't come through yet? I'm here to help.
+USER: Yaar paisa nahi hai abhi, kya karoon.
+BOT: I hear you. Is everything okay at your end? Sometimes things come up that are difficult to talk about. We'd rather understand and help.
+USER: Saari salary already chali gayi this month.
+BOT: I understand this is a tough time. I will arrange for a human colleague to call you back to discuss how we can support you. When would be a good time for the callback?
+USER: Dekhenge next month.
+BOT: Thank you for letting me know. I will note that you prefer a callback next month. If you need any help before then, please feel free to reach out. Take care.
