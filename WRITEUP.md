@@ -22,22 +22,37 @@ The bot is the surface; the **product** is the operating system around it — fo
 
 Outcome shape (posted to a webhook on every call end): `outcome` (one of `promise_to_pay / already_paid / dispute_raised / callback_request / refused / human_callback_required`) + a typed `outcome_detail` (PTP date + mode, waiver reason, escalation reason, etc.) + `compliance_flags`, `policy_rationale`, full audit log path.
 
-## 2 · Headline result
+## 2 · Headline result — v1 vs v2, actually run
 
-| Metric | v1 baseline | v2 (pre-layers) | v2 (final) |
+**v1 was tested.** The literal starter prompt from the brief was run through the same eval harness as v2 on 15 scripted scenarios (the v1 scenario set, kept fixed since the first eval). Results in `collections-voicebot/eval/results_v1.csv`. v2 was then run on the same 15 scenarios for an apples-to-apples comparison, and separately on the full 42-scenario stress suite for the production picture.
+
+#### Apples-to-apples: v1 vs v2 on the same 15 scenarios
+
+| Metric | v1 baseline | v2 final | Delta |
 |---|---:|---:|---:|
-| **P0 (zero-tolerance) compliance** | 13% | 94% | **100%** ✓ |
-| Calls with zero policy violations | 13% | 93% | **95%** ✓ |
-| **Of PTPs, date + mode captured** | low | 78% | **100%** ✓ |
-| Right tone for segment | 87% (vacuous) | 100% | **100%** ✓ |
-| Apex tone preservation | 0% | 100% | **100%** ✓ |
-| Calls that would pass full QA | 13% | 60% | **55%** |
-| Estimated voice p95 round-trip | — | 2.8 s | **1.9 s** |
-| Mean cost per call (LLM + STT + TTS) | — | ₹0.31 | **₹0.41** |
+| Calls with zero policy violations | **13%** | **100%** | +87 pp |
+| Right tone for segment | 87% | 100% | +13 pp |
+| Right escalation / transfer decision | 100% | 87% | −13 pp |
+| Outcome matches expected | 87% *(see below)* | 67% *(see below)* | −20 pp |
+| **Full pass (all 4 axes both honour)** | **13%** | **67%** | **+54 pp** |
 
-Across **42 scenarios** (16 P0, 26 P1) spanning English, Hinglish, Hindi, Tamil, Malayalam. Five eval cycles.
+#### v2 on the full 42-scenario stress suite (adds 11 adversarial + 16 multilingual)
 
-**The honest read.** Four structural layers (move ladder, segment policy, refuse-vs-DND split, commitment-overreach validator) plus a hardship lock and five LLM-emitted structured tags **moved the ship-blocking floor from 94% to 100% on P0 compliance** — the single most important number, because under RBI Fair Practices Code one P0 failure is a regulatory event. The 55% full-pass (vs 60% prior) reflects two judge-strict axes (hallucination, outcome-match) that are *eval-rubric-tunable*, not architectural. A second runner (`eval/runner_live.py`) graded **24 real recorded calls** with auto-inferred ground truth and reproduced the synthetic numbers within ~3 points at every operationally meaningful coverage threshold (Appendix A).
+| Metric | v2 |
+|---|---:|
+| P0 (zero-tolerance) compliance | **100%** ✓ |
+| Calls with zero policy violations | 95% |
+| Of PTPs, date + mode captured | **100%** |
+| Apex tone preservation | 100% |
+| Calls that would pass full QA (6 axes) | 55% |
+| Estimated voice p95 round-trip | 1.9 s |
+| Mean cost per call (LLM + STT + TTS) | ₹0.41 |
+
+**Why v1 hit 87% outcome_match despite being broken.** v1 over-promises ("I can approve up to 50% waiver"), mis-states facts ("interest rate is 12%, late fee ₹1500"), and threatens legal action — so customers cheerfully agree to pay, and the structured outcome lands as `promise_to_pay`. The outcome axis alone makes v1 look competent. The compliance axis is what exposes it: **v1 committed 21 policy violations across 15 calls**, including 5 CIBIL-prediction breaches, 3 wrong-late-fee statements, 2 waiver pre-approvals, 2 legal threats, and 2 distress-signal-ignored events (kept pitching after medical / job loss). Under RBI Fair Practices Code, each of those is a regulatory event. v1's per-bucket compliance: `compliance 0%`, `relationship 0%`, `scope 0%`, `adherence 17%`, `factual 50%`.
+
+**Why v2's outcome_match dropped to 67% on the same set.** v2 *refuses* to over-promise. Where v1 cheerfully accepted "I'll pay next month" from a DPD-22 frequent-late, v2's segment policy caps PTP horizon at 7 days and pushes back — which sometimes ends in `callback_request` or `human_callback_required` rather than the scripted `promise_to_pay`. The "miss" is correct behaviour. Three of the five outcome-mismatches on the shared set are this pattern; the eval's `expected_outcome` was written before segment-policy thresholds existed.
+
+**The honest read.** Four structural layers (move ladder, segment policy, refuse-vs-DND split, commitment-overreach validator) plus a hardship lock and five LLM-emitted structured tags **moved zero-violation-rate from 13% to 100% on the shared set** (+87 pp) and held 95% on the full 42-scenario stress suite. 4-axis full-pass went from 13% → 67% (+54 pp) on the shared set. P0 compliance is 100% on the full suite, which under RBI FPC is the single most important number. The 55% full-pass on the 42-scenario suite uses 6 axes (adds hallucination + slot-capture) — both are judge-strict and *eval-rubric-tunable*, not architectural. A second runner (`eval/runner_live.py`) graded **24 real recorded calls** with auto-inferred ground truth and reproduced the synthetic numbers within ~3 points at every operationally meaningful coverage threshold (Appendix A).
 
 ## 3 · Definition of failure + how it was tested
 
