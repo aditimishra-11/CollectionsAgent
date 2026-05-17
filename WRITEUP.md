@@ -42,6 +42,28 @@ The cost: full-pass at 55% vs the prior 60% baseline. The remaining failures clu
 
 > **Diagnostic-and-recovery cycles are documented openly throughout the commit history.** Five eval runs were executed; each surfaced unintended interactions that informed the next change. E.g. the first run after the move ladder landed showed 31% full-pass (regressed from 60%) because the `[END_CALL]` guard was too strict — diagnosed sticky `terminal_outcome` bug, fixed, recovered to 57%. A later run hit a different regression — validator over-firing on legitimate ₹3,000 partial-payment suggestions because a discloses-balance pattern was too broad — fixed by context-scoping. This is what real eval-cycle iteration looks like; the writeup makes no attempt to hide it.
 
+### 2.1 · Real-call eval — independent evidence
+
+Synthetic scenarios are useful but the "customer" is a GPT-4o roleplay, not a real Indian English speaker with STT noise and natural phrasing. To complement the 42-scenario × 5-cycle synthetic eval, a second runner (`eval/runner_live.py`) grades **actual recorded JSONL transcripts in `logs/`** against per-call annotations (`eval/annotations_live.yaml`). Same grading axes; same GPT-4o judge; ground truth is annotated post-hoc rather than baked into a scenario file.
+
+Inaugural run (n=3 real calls from today's session):
+
+| Axis | Synthetic eval (n=42) | Real-call eval (n=3) |
+|---|---:|---:|
+| Compliance pass (validator) | 95% | **100%** |
+| Outcome match (vs ground truth) | 76% | **100%** |
+| Tone for segment | 100% | **100%** |
+| Hallucination pass | 81% | **100%** |
+| Closure coherence | — (new axis) | **100%** |
+| Contract consistency (words ↔ system) | — (new axis) | **100%** |
+| `bot_must` (all requirements met) | per-scenario | **33%** (2 of 3 calls missed at least one requirement) |
+| `bot_must_not` (all prohibitions avoided) | per-scenario | **67%** (one call had the "won't call again" overreach that drove commit `eecf958`) |
+| **Full pass** | 55% | **33%** |
+
+**The real-call gate failure is informative, not random.** The P06 frequent-late call (`80ed6c2a20`) failed `bot_must_not` 0/3 because the bot said *"I've noted that you'll pay next month and won't call again"* — exactly the commitment-overreach phrasing that drove the validator-shrink commit (`eecf958`). The judge caught what the over-broad regex had been failing to block correctly. The eval is doing its job: surfacing real bugs in real calls, not just confirming synthetic ones.
+
+Annotations are 5 lines of YAML per call (see `eval/annotations_live.yaml`); the same workflow scales to hundreds of production-sample calls for Compliance review.
+
 ## 3 · Why this was hard, in three product tensions
 
 **Tension 1 — Tone vs rigour, by segment.** An Apex customer who forgot to update auto-debit needs concierge; a frequent defaulter at DPD 22 needs firmness. Same script kills retention on the first and recovery on the second. Solved by composing the prompt from three strategies × six modifier dimensions (`app/prompt_builder.py`) — each call gets a freshly assembled prompt that's right for *this* customer.
