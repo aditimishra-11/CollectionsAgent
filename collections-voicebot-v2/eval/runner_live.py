@@ -123,6 +123,22 @@ def discover_all_calls(since_date: str) -> list[str]:
     return sorted(out)
 
 
+def load_persisted_annotation(call_id: str) -> dict | None:
+    """If the call has a persisted annotation file written at call-end time
+    (by ``app/auto_annotator.py``), load it. Returns None otherwise.
+    """
+    path = LOGS_DIR / f"call_{call_id}.annotation.yaml"
+    if not path.exists():
+        return None
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        if isinstance(data, dict):
+            return data
+    except Exception as e:
+        logger.warning(f"Failed to load persisted annotation {path}: {e}")
+    return None
+
+
 @dataclass
 class CallEvalResult:
     call_id: str
@@ -655,21 +671,36 @@ def main() -> None:
     else:
         all_call_ids = discover_all_calls(args.since)
 
+    # Resolution order per call:
+    #   1. Explicit entry in annotations_live.yaml (hand-written, gold)
+    #   2. Persisted annotation file logs/call_<id>.annotation.yaml
+    #      (written by app/auto_annotator.py at call-end time; ground truth
+    #      already inferred and stored — no per-grade re-inference needed)
+    #   3. Runtime auto-annotation from persona metadata (historical calls
+    #      that pre-date the auto-annotator hook)
     annotations = []
+    stats = {"explicit": 0, "persisted": 0, "runtime_auto": 0}
     for cid in all_call_ids:
         if cid in explicit_by_id:
             annotations.append(explicit_by_id[cid])
-        else:
-            try:
-                started, _, _ = load_call(cid)
-                annotations.append(auto_annotation(cid, started, {}))
-            except Exception as e:
-                logger.warning(f"Skipping {cid}: {e}")
-    explicit_overlap = sum(1 for cid in all_call_ids if cid in explicit_by_id)
+            stats["explicit"] += 1
+            continue
+        persisted = load_persisted_annotation(cid)
+        if persisted is not None:
+            annotations.append(persisted)
+            stats["persisted"] += 1
+            continue
+        try:
+            started, _, _ = load_call(cid)
+            annotations.append(auto_annotation(cid, started, {}))
+            stats["runtime_auto"] += 1
+        except Exception as e:
+            logger.warning(f"Skipping {cid}: {e}")
     logger.info(
         f"Discovered {len(all_call_ids)} calls since {args.since}. "
-        f"{explicit_overlap} have explicit annotations; "
-        f"{len(annotations) - explicit_overlap} auto-annotated from persona."
+        f"Annotation source: {stats['explicit']} explicit, "
+        f"{stats['persisted']} persisted-at-call-end, "
+        f"{stats['runtime_auto']} runtime-auto (historical fallback)."
     )
 
     judge = LLMJudge()

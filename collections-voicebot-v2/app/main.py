@@ -21,7 +21,22 @@ from loguru import logger
 
 from app.audio.streaming_io import StreamingAudioIO, save_wav
 from app.config import RECORDINGS_DIR, ROOT, assert_runtime_keys
+from app.auto_annotator import auto_annotate_in_background
 from app.conversation import Conversation
+from app.pre_filter import run_prefilter as _run_prefilter_for_anno
+
+
+def _persist_auto_annotation(conv: "Conversation", ctx) -> None:
+    """Write per-call annotation YAML alongside the JSONL — fire-and-forget."""
+    try:
+        pf = _run_prefilter_for_anno(ctx)
+        auto_annotate_in_background(
+            conv.call_id, conv.history, ctx,
+            strategy=pf.strategy or "B_problem_solving",
+        )
+    except Exception:
+        # Annotation is opportunistic; CLI loop must finish regardless
+        pass
 from app.pre_filter import CRMContext
 
 
@@ -56,6 +71,7 @@ def _run_text(ctx: CRMContext) -> None:
     conv = Conversation(ctx, get_user_text, say_bot_text)
     result = conv.run()
     _print_summary(result)
+    _persist_auto_annotation(conv, ctx)
 
 
 def _run_voice(ctx: CRMContext) -> None:
@@ -91,6 +107,7 @@ def _run_voice(ctx: CRMContext) -> None:
         result = conv.run()
     finally:
         io.close()
+    _persist_auto_annotation(conv, ctx)
 
     if bot_samples_all:
         combined = np.concatenate(bot_samples_all)

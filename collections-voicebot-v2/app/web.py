@@ -140,6 +140,22 @@ class WebCall:
                 "llm_latencies_ms": result.llm_latencies_ms,
             }
             self.bot_q.put({"type": "end", "payload": self.outcome_payload})
+
+            # Fire-and-forget: generate auto-annotation alongside the JSONL
+            # for this call. Runs in a daemon thread so the SSE close /
+            # outcome webhook post aren't blocked. Idempotent — won't write
+            # if the annotation file already exists.
+            from app.auto_annotator import auto_annotate_in_background
+            from app.pre_filter import run_prefilter
+            try:
+                _pf = run_prefilter(self.ctx)
+                auto_annotate_in_background(
+                    self.conv.call_id, self.conv.history, self.ctx,
+                    strategy=_pf.strategy or "B_problem_solving",
+                )
+            except Exception:
+                # Annotation is opportunistic; never let it disrupt the call
+                logger.exception("auto_annotate_in_background failed to start")
         except Exception as e:
             logger.exception("WebCall thread error")
             self.bot_q.put({"type": "error", "message": str(e)})
