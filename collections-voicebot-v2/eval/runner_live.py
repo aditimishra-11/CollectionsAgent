@@ -169,6 +169,9 @@ class CallEvalResult:
     estimated_inr_per_call: float       # NEW
     weight: float
     full_pass: bool
+    axes_passed: int = 0       # NEW — count of individual checks this call passed
+    axes_total: int = 0        # NEW — count of individual checks evaluated
+    coverage_pct: float = 0.0  # NEW — axes_passed / axes_total
     notes: str = ""
 
 
@@ -512,6 +515,36 @@ def grade_one(annotation: dict, judge: LLMJudge) -> CallEvalResult:
     # full_pass now includes slot capture as a soft gate
     full_pass = full_pass and slot_date and slot_mode
 
+    # ----- coverage: count individual sub-axis passes/totals -----
+    # bot_must / bot_must_not are counted per ITEM, not as a single
+    # combined gate — gives a meaningful gradient (e.g. "6 of 6 prohibitions
+    # avoided" vs "0 of 3 avoided" is a real signal).
+    sub_axes_passed = 0
+    sub_axes_total = 0
+    # Binary axes
+    for ok in [
+        compliance_pass, outcome_match, transfer_correct,
+        tone_pass, halluc_pass, closure_pass, contract_pass,
+    ]:
+        sub_axes_total += 1
+        sub_axes_passed += 1 if ok else 0
+    # bot_must / bot_must_not per individual item
+    for ok in bot_must_results.values():
+        sub_axes_total += 1
+        sub_axes_passed += 1 if ok else 0
+    for ok in bot_must_not_results.values():
+        sub_axes_total += 1
+        sub_axes_passed += 1 if ok else 0
+    # Slot capture only if PTP-relevant
+    if reached_ptp_probe:
+        sub_axes_total += 2
+        sub_axes_passed += (1 if slot_date else 0) + (1 if slot_mode else 0)
+    # Likert axes — score >=3 counts as passed (consistent with synthetic eval)
+    for likert in [empathy.score or 3, sentiment.score or 3, context.score or 3]:
+        sub_axes_total += 1
+        sub_axes_passed += 1 if likert >= 3 else 0
+    coverage_pct = (sub_axes_passed / sub_axes_total * 100.0) if sub_axes_total else 0.0
+
     return CallEvalResult(
         call_id=call_id,
         persona_id=annotation.get("persona_id", started.get("customer_id", "?")),
@@ -541,6 +574,9 @@ def grade_one(annotation: dict, judge: LLMJudge) -> CallEvalResult:
         estimated_inr_per_call=cost_inr,
         weight=float(annotation.get("weight", 1.0)),
         full_pass=full_pass,
+        axes_passed=sub_axes_passed,
+        axes_total=sub_axes_total,
+        coverage_pct=coverage_pct,
     )
 
 
@@ -558,6 +594,7 @@ def write_csv(results: list[CallEvalResult]) -> None:
         "bot_must_not_pass_count", "bot_must_not_total",
         "llm_p50_ms", "llm_p95_ms",
         "llm_input_tokens", "llm_output_tokens", "estimated_inr_per_call",
+        "axes_passed", "axes_total", "coverage_pct",
         "full_pass",
     ]
     with RESULTS_FILE.open("w", newline="", encoding="utf-8") as f:
@@ -584,6 +621,9 @@ def write_csv(results: list[CallEvalResult]) -> None:
                 "llm_p50_ms": r.llm_p50_ms, "llm_p95_ms": r.llm_p95_ms,
                 "llm_input_tokens": r.llm_input_tokens, "llm_output_tokens": r.llm_output_tokens,
                 "estimated_inr_per_call": r.estimated_inr_per_call,
+                "axes_passed": r.axes_passed,
+                "axes_total": r.axes_total,
+                "coverage_pct": round(r.coverage_pct, 1),
                 "full_pass": r.full_pass,
             })
 
@@ -647,6 +687,23 @@ def print_summary(results: list[CallEvalResult]) -> None:
         print(f"  Mean cost / call            : INR {mean_cost:.2f}")
         print(f"  FULL PASS (unweighted)      : {pct(lambda r: r.full_pass)}")
         print(f"  FULL PASS (weighted)        : {100 * weighted_full:.0f}%")
+
+        # ----- AXIS COVERAGE DISTRIBUTION -----
+        # full_pass is a strict all-or-nothing gate. Coverage shows how CLOSE
+        # to perfect each call was — a much better production-QA signal.
+        print()
+        print(f"AXIS COVERAGE — % of sub-axes each call passed (n={n}):")
+        thresholds = [100, 95, 90, 85, 80, 75, 70, 60, 50, 0]
+        for thr in thresholds:
+            cnt = sum(1 for r in results if r.coverage_pct >= thr)
+            bar = "█" * int(40 * cnt / n) if n else ""
+            label = "100% (full)" if thr == 100 else f">={thr:>3d}%"
+            print(f"  {label:12s}: {cnt:>2d}/{n} ({100*cnt/n:>4.0f}%) {bar}")
+        mean_cov = sum(r.coverage_pct for r in results) / n
+        median_cov = sorted(r.coverage_pct for r in results)[n // 2]
+        print(f"  mean coverage   : {mean_cov:.1f}%")
+        print(f"  median coverage : {median_cov:.1f}%")
+        print(f"  axes per call   : {results[0].axes_total} typical (slot axes only when PTP-relevant)")
     print()
     print(f"Per-call detail: {RESULTS_FILE}")
 
