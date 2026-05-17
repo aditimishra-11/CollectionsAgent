@@ -10,11 +10,15 @@ This is the demo / submission version. v1 lives in the sibling folder `../collec
 |---|---|
 | **Pre-filter** | Reads CRM payload, blocks Apex+sub-prime, picks call strategy, derives modifier keys |
 | **Segment-aware prompts** | 3 base strategies (Apex concierge / A_reminder / B_problem_solving) + 14 customer-dimension modifiers |
-| **Intent classifier** | 25 intents, 6 fast-path (escalate immediately, no LLM) + 19 slow-path (FSM transitions) |
-| **FSM** | 13 states (10 from architecture doc + 3 India-specific: third-party, DND, legitimacy) — owns ALL routing |
-| **Response validator** | Pre-TTS scan grounded in RBI Fair Practices Code, RBI Master Direction on Credit Cards 2022, DPDP Act 2023, TRAI DND |
-| **Pre-scripted closes** | 6 fast-path closing templates (medical, job loss, business failure, mental distress, natural disaster, abuse) |
-| **Outcome schema** | 7 terminal outcomes (vs the 4 named in the brief — split out from architecture doc) |
+| **Intent classifier** | 29 intents, 8 fast-path (escalate immediately, no LLM) + 21 slow-path (FSM transitions) |
+| **FSM** | 15 states — owns ALL routing. Three are ladder-managed (`COLLECTING`, `PTP_PROBE`, `HARDSHIP_PROBE`); the others are terminal / deflection / identity states |
+| **Move ladder** | Ordered moves per ladder-managed state; LLM tags reply with `[MOVE: X]`; bot cannot loop on the same question by construction |
+| **Segment policy** | `app/policy.py` resolves 1 of 6 policy rows from CRM context; sets PTP horizon, partial floor, abuse strikes, callback SLA |
+| **Response validator** | 17 rules, pre-TTS, grounded in RBI Fair Practices Code, RBI Master Direction on Credit Cards 2022, DPDP Act 2023, TRAI DND |
+| **Pre-scripted closes** | 8 fast-path closing templates (medical, job loss, business failure, mental distress, natural disaster, abuse, deceased, language preference) |
+| **Outcome schema** | 7 top-level outcomes posted to CRM webhook (`promise_to_pay`, `already_paid`, `callback_request`, `human_callback_required`, `refused`, `wrong_number`, `no_answer`) |
+| **Structured tags** | 5 LLM-emitted tags (`[MOVE]`, `[CUSTOMER_HARDSHIP]`, `[CUSTOMER_PTP_CAPTURED]`, `[CUSTOMER_WANTS_TO_END]`, `[END_CALL]`) — LLM declares its understanding, code derives the consequence |
+| **Real-call eval** | `eval/runner_live.py` grades JSONL transcripts in `logs/`; auto-annotation at call end persists ground truth to disk |
 
 ## Stack
 
@@ -71,36 +75,44 @@ python -m eval.compare
 ```
 app/
   main.py                 CLI entry (text | voice) — requires --persona
+  web.py                  FastAPI server + SSE event stream for the browser frontend
   conversation.py         v2 conversation loop, orchestrates all components
-  config.py               env loader
-  audit.py                per-turn JSONL audit
-  pre_filter.py           CRM context → strategy + modifier keys
-  intent_classifier.py    25-intent classifier (rule-based)
-  fsm.py                  13-state FSM + routing
-  validator.py            BFSI-grounded response validator + fallback templates
+  config.py               env loader, model + cost constants
+  audit.py                per-turn JSONL audit logger
+  auto_annotator.py       writes eval ground truth to disk at call end
+  pre_filter.py           CRM context → strategy + modifier keys + block rules
+  intent_classifier.py    29-intent rule-based classifier
+  fsm.py                  15-state FSM + move ladder + sticky context flags
+  policy.py               SegmentPolicy table (6 rows) + resolver
+  validator.py            17-rule pre-TTS validator + safe fallback templates
   prompt_builder.py       4-part prompt composer
   llm/openai_client.py
   stt/sarvam_stt.py
   tts/sarvam_tts.py
-  audio/local_io.py
-  outcome/*.py
+  audio/local_io.py       Silero VAD + NLMS AEC + streaming mic IO
+  outcome/*.py            schema, extractor, webhook poster
+  static/                 single-page browser frontend (HTML / JS / CSS)
 
 prompts/
   base.txt                          Immutable facts + NEVER list + escalation signals
   strategy_apex_concierge.txt
   strategy_a_reminder.txt
   strategy_b_problem_solving.txt
-  modifiers/                        14 modifier paragraphs (history × bureau × util × age × channel)
-  fsm_states/                       13 FSM state instruction files
-  closes/                           6 pre-scripted close templates
+  modifiers/                        Per-customer-dimension modifiers (tier × history × bureau × util × age × channel)
+  fsm_states/                       Per-FSM-state instruction files
+  closes/                           Pre-scripted close templates (8 fast-path)
 
 eval/
-  personas.csv         27 personas (15 original + 12 new for v2 coverage)
-  scenarios.yaml       27 scenarios across 6 buckets
-  rule_checks.py       Deterministic compliance scan (BFSI/RBI grounded)
-  judge.py             LLM-as-judge for qualitative tone checks
-  runner.py            Text-mode eval harness
-  compare.py           v1 vs v2 comparison table
-  results_v2.csv       Generated
-  comparison_v1_v2.csv Generated
+  personas.csv                      37 personas
+  scenarios.yaml                    42 scenarios across 8 buckets
+  rule_checks.py                    Deterministic compliance scan (regex; RBI-grounded)
+  judge.py                          GPT-4o judge for tone, hallucination, Likert axes
+  runner.py                         Synthetic scenario runner
+  runner_live.py                    Grades JSONL transcripts in logs/ (auto-annotated)
+  backfill_v1.py                    Re-grades v1 transcripts with v2's judge
+  annotations_live.yaml             Hand-written ground truth (3 calls); takes precedence
+  compare.py                        v1 vs v2 side-by-side
+  results_v2.csv                    42-scenario synthetic results
+  results_live.csv                  24-call real-recording results
+  comparison_v1_v2.csv              Apples-to-apples on shared 15 scenarios
 ```
