@@ -95,8 +95,11 @@ class ScenarioResult:
     estimated_inr_per_call: float
 
     full_pass: bool
-    transcript_path: str
-    notes: str
+    axes_passed: int = 0       # NEW — count of sub-axes passed
+    axes_total: int = 0        # NEW — count of sub-axes evaluated
+    coverage_pct: float = 0.0  # NEW — sub_passed / sub_total
+    transcript_path: str = ""
+    notes: str = ""
 
 
 def _load_scenarios() -> list[dict]:
@@ -306,6 +309,25 @@ def run_scenario(scenario: dict, persona: dict, version: str) -> ScenarioResult:
         and hallucination_pass
     )
 
+    # --- Per-call axis coverage (parallel to runner_live.py) ---
+    # full_pass is a strict gate; coverage shows how CLOSE to perfect each
+    # call was. Same axes counted for both evals where they overlap so the
+    # numbers are directly comparable.
+    sub_passed = 0
+    sub_total = 0
+    for ok in [compliance_pass, outcome_match, transfer_correct, tone_pass, hallucination_pass]:
+        sub_total += 1
+        sub_passed += 1 if ok else 0
+    # slot_rate as a sub-axis only when expected is PTP
+    if expected_outcome == "promise_to_pay":
+        sub_total += 1
+        sub_passed += 1 if slot_rate >= 1.0 else 0
+    # Likerts (>=3 counts as pass)
+    for likert in [empathy, sentiment, context_ret]:
+        sub_total += 1
+        sub_passed += 1 if (likert is not None and likert >= 3) else 0
+    coverage_pct = round(100.0 * sub_passed / sub_total, 1) if sub_total else 0.0
+
     # Save transcript
     transcripts_dir = EVAL_DIR / "transcripts" / version
     transcripts_dir.mkdir(parents=True, exist_ok=True)
@@ -346,6 +368,9 @@ def run_scenario(scenario: dict, persona: dict, version: str) -> ScenarioResult:
         llm_output_tokens=out_tok,
         estimated_inr_per_call=estimated_inr_per_call,
         full_pass=full_pass,
+        axes_passed=sub_passed,
+        axes_total=sub_total,
+        coverage_pct=coverage_pct,
         transcript_path=str(tpath.relative_to(ROOT)),
         notes=scenario.get("description", "").strip(),
     )
@@ -370,7 +395,8 @@ def write_results(results: list[ScenarioResult], version: str):
         "turns", "llm_p50_ms", "llm_p95_ms", "llm_max_ms",
         "llm_input_tokens", "llm_output_tokens", "estimated_inr_per_call",
         # Overall
-        "full_pass", "transcript_path", "notes",
+        "full_pass", "axes_passed", "axes_total", "coverage_pct",
+        "transcript_path", "notes",
     ]
     with out_path.open("w", encoding="utf-8", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fieldnames)
@@ -566,6 +592,22 @@ def main(argv: list[str] | None = None) -> int:
     # ----- HEADLINE -----
     print("\n┌─ HEADLINE")
     print(f"│  Calls that would pass full QA          {s['full_pass_rate']:.0%}")
+
+    # ----- AXIS COVERAGE (gradient view, parallel to runner_live.py) -----
+    # full_pass is strict; coverage shows how close each call got to perfect.
+    # Same axes as runner_live.py so synthetic vs real numbers are comparable.
+    if results:
+        covs = [r.coverage_pct for r in results]
+        mean_cov = sum(covs) / len(covs)
+        med_cov = sorted(covs)[len(covs) // 2]
+        print("\n┌─ AXIS COVERAGE — how close each call got to perfect")
+        print(f"│  Mean coverage                          {mean_cov:>4.1f}%")
+        print(f"│  Median coverage                        {med_cov:>4.1f}%")
+        for threshold in [100, 95, 90, 85, 80, 75, 70, 60, 50, 0]:
+            n_at = sum(1 for c in covs if c >= threshold)
+            pct = 100.0 * n_at / len(covs)
+            label = "100% (full pass)" if threshold == 100 else f">={threshold}%"
+            print(f"│  Calls at {label:18s}            {n_at:>3d}/{len(covs)} ({pct:>4.1f}%)")
 
     # Breakdowns — note: "clean" = zero-violation rate, "all_pass" = every axis passed
     print("\nBy bucket:                                       clean   all_pass")
