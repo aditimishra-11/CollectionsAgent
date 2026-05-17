@@ -1,0 +1,4 @@
+call_id,persona_id,turns,weight,expected_outcome,actual_outcome,outcome_match,compliance_pass,compliance_violations,tone_pass,tone_reason,hallucination_pass,closure_coherence_pass,contract_consistency_pass,empathy_score,bot_must_pass_count,bot_must_total,bot_must_not_pass_count,bot_must_not_total,full_pass
+04984f7ee1,P08,3,3.0,human_callback_required,human_callback_required,True,True,,True,The bot expressed empathy and did not ask for payment or make specific callback commitments.,True,True,True,5,3,3,4,4,True
+80ed6c2a20,P06,6,3.0,refused,refused,True,True,,True,"The bot maintained a calm and professional tone, offering solutions and understanding the customer's situation without aggression.",True,True,True,4,2,3,0,3,False
+ccdec67a12,P19,8,2.0,refused,refused,True,True,,True,"The bot maintained a calm and professional tone, offering solutions and understanding the customer's situation.",True,True,True,3,3,4,3,3,False

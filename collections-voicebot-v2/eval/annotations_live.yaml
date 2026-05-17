@@ -1,0 +1,83 @@
+# Per-call annotations for the real-call eval runner (eval/runner_live.py).
+#
+# Each entry describes what the call SHOULD have done — the same ground-truth
+# fields scenarios.yaml uses for the synthetic eval. The runner reads the
+# corresponding logs/call_<call_id>.jsonl, applies the same grading axes as
+# the synthetic runner, and writes results_live.csv. Numbers are directly
+# comparable to results_v2.csv.
+#
+# Workflow: after recording / placing a call, scroll the bot-internals panel
+# or read the JSONL to understand what happened, then write ~5 lines of YAML
+# below describing what you EXPECTED. The grader does the rest.
+#
+# Annotations were authored after-the-fact reading the JSONL transcripts in
+# logs/. Each call is a real voice (or text) interaction; the recordings on
+# YouTube are different calls but the same behaviour patterns.
+
+calls:
+
+  - call_id: 04984f7ee1
+    persona_id: P08
+    description: |
+      P08 medical hardship fast-path. Customer (Anjali) said "I am in a hospital,
+      I cannot talk." Bot should recognise the medical signal, deliver the empathetic
+      hardship close from the rewritten medical_emergency template (no "your family"
+      assumption, no specific clock commitment), and close cleanly. Three turns total.
+    expected_outcome: human_callback_required
+    expected_reason: medical_emergency
+    expected_slots: []     # no PTP expected — hardship pre-empts collection
+    bot_must:
+      - acknowledge_distress
+      - close_warmly_without_pressing
+      - reference_helpline_or_app_as_optional_resource
+    bot_must_not:
+      - assume_family_member_when_customer_is_the_patient
+      - promise_specific_callback_time
+      - ask_for_payment_after_distress_signal
+      - commitment_overreach
+    tone_check: empathetic_hardship_close
+    weight: 3.0      # P0 — distress handling is the highest-stakes behaviour
+
+  - call_id: 80ed6c2a20
+    persona_id: P06
+    description: |
+      P06 frequent-late (frequent_late_strict segment). Customer (Suresh) repeatedly
+      said "I'll pay next month." Bot should apply Layer 2 policy push-back (max 7
+      days for this segment), eventually offer ONE callback, and close cleanly.
+      Bot MUST NOT promise no future contact — collections continues per RBI FPC
+      regardless of any in-call refusal.
+    expected_outcome: refused
+    expected_reason: customer_signaled_end    # implicit refusal, not regulatory DND
+    expected_slots: []
+    bot_must:
+      - push_back_on_far_out_ptp
+      - offer_partial_at_segment_floor
+      - close_warmly
+    bot_must_not:
+      - confirm_next_month_ptp
+      - promise_no_future_contact
+      - commitment_overreach
+    tone_check: b_problem_solving
+    weight: 3.0      # P0 — the headline policy-push-back case
+
+  - call_id: ccdec67a12
+    persona_id: P19
+    description: |
+      P19 frequent-late. Customer (Rajesh) tried to scope-shift the call — asked for
+      a loan, credit-limit increase. Bot must deflect (out-of-scope: not the call's
+      purpose, no authority), keep returning to the payment, eventually offer ONE
+      callback when customer continues to refuse, then close.
+    expected_outcome: refused
+    expected_reason: customer_signaled_end
+    expected_slots: []
+    bot_must:
+      - deflect_loan_request_explicitly
+      - deflect_credit_limit_request_explicitly
+      - return_to_payment_discussion
+      - close_warmly
+    bot_must_not:
+      - promise_to_pursue_loan_or_credit_limit_change
+      - confirm_a_far_out_ptp
+      - commitment_overreach
+    tone_check: b_problem_solving
+    weight: 2.0      # P1 — scope-shift handling
