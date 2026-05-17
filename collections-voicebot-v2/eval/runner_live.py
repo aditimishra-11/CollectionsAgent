@@ -130,6 +130,7 @@ class CallEvalResult:
     expected_outcome: str
     actual_outcome: str
     outcome_match: bool
+    transfer_correct: bool                # NEW — parallel to synthetic eval
     compliance_pass: bool
     compliance_violations: list[str]
     bot_must_results: dict[str, bool]
@@ -317,6 +318,61 @@ def judge_closure(transcript: str, judge: LLMJudge) -> bool:
     return _ask_binary_judge(transcript, question, judge)["passed"]
 
 
+def infer_expected_outcome(transcript: str, persona_id: str, judge: LLMJudge) -> str:
+    """LLM-judge infers what the right OUTCOME should have been, given the
+    customer's behaviour in the transcript. Returns one of the 7 outcome
+    types. Isolated judge prompt — separate from the grading judges — to
+    minimise self-agreement bias.
+
+    Methodology note: having an LLM infer ground truth and then grade against
+    it is a known limitation (the judge may agree with itself). To mitigate:
+    (a) the inference prompt is FOCUSED only on "what does the customer want
+    / what did they say", ignoring how the bot responded; (b) the grading
+    judge is asked separately whether the bot's actual outcome matched the
+    inferred expected outcome. Still imperfect — explicit hand annotation
+    is gold-standard. But strictly better than skipping the metric.
+    """
+    from eval.judge import _BINARY_JUDGE_SYSTEM
+    system = (
+        "You are an evaluator inferring the GROUND-TRUTH expected outcome for a "
+        "bank-collections call from the customer's behaviour. Ignore the bot's "
+        "responses for this judgement — focus only on what the customer said and "
+        "what the right downstream action would be. Return STRICT JSON: "
+        '{"outcome": "<one of: promise_to_pay, already_paid, callback_request, '
+        'human_callback_required, refused, wrong_number, no_answer>", '
+        '"reason": "one short sentence"}.'
+    )
+    user = (
+        f"PERSONA: {persona_id}\n\nTRANSCRIPT:\n{transcript}\n\n"
+        "Based ONLY on what the CUSTOMER said and did, what should the outcome of "
+        "this call have been? Pick one of the 7 outcomes. If the customer asserted "
+        "DND, refused without distress, said they will pay, said they already paid, "
+        "revealed hardship / job loss / medical / business failure, said it's a wrong "
+        "number, or said nothing at all — pick the matching outcome."
+    )
+    data = judge._client.reply_json(
+        system_prompt=system, user_content=user, max_tokens=200, temperature=0.0
+    )
+    return str(data.get("outcome", "refused"))
+
+
+def infer_should_transfer(transcript: str, judge: LLMJudge) -> bool:
+    """LLM-judge infers whether the call SHOULD have been transferred to a
+    human (hardship desk, language pool, abuse review, etc.) based on the
+    customer's behaviour. Returns True if transfer was warranted.
+    """
+    question = (
+        "TRANSFER WARRANT: Based on the customer's behaviour, should this call have been "
+        "transferred to a human (hardship desk / language pool / senior agent / "
+        "bereavement / waivers / disputes)? Pass=true if the customer revealed any signal "
+        "warranting human handoff (medical emergency, job loss, business failure, mental "
+        "distress, deceased family member, language barrier, abuse, waiver request, "
+        "disputed charge). Pass=false if the call was a normal collection conversation "
+        "the bot could handle to closure."
+    )
+    return _ask_binary_judge(transcript, question, judge)["passed"]
+
+
 def judge_contract_consistency(transcript: str, judge: LLMJudge) -> bool:
     question = (
         "CONTRACT CONSISTENCY: Did the bot's SPOKEN WORDS match what the system actually did? "
@@ -356,12 +412,22 @@ def grade_one(annotation: dict, judge: LLMJudge) -> CallEvalResult:
             compliance_violations.extend(v.get("violations", []))
     compliance_pass = len(compliance_violations) == 0
 
-    # Outcome — only graded when annotation provides a ground-truth expected_outcome
+    # Outcome — ground truth from explicit annotation OR inferred by LLM judge
     actual = derive_actual_outcome(call_id, ended, turns)
     expected = annotation.get("expected_outcome") or ""
-    # Auto-annotated calls have expected=None → outcome_match neutralised to True
-    # (don't penalise full_pass for an axis we can't grade without ground truth).
-    outcome_match = actual == expected if expected else True
+    if not expected:
+        # Auto-annotated call — infer ground truth from the customer's behaviour
+        expected = infer_expected_outcome(transcript, annotation.get("persona_id", "?"), judge)
+    outcome_match = actual == expected
+
+    # Transfer-correctness — was a human handoff warranted? Inferred for
+    # auto-annotated calls; explicit annotation could override (not exposed
+    # in the YAML schema yet — add `should_transfer: true|false` if needed).
+    should_transfer = annotation.get("should_transfer")
+    if should_transfer is None:
+        should_transfer = infer_should_transfer(transcript, judge)
+    actually_transferred = actual == "human_callback_required"
+    transfer_correct = should_transfer == actually_transferred
 
     # Slot capture (only for PTP-expected calls)
     expected_slots = annotation.get("expected_slots") or []
@@ -417,6 +483,7 @@ def grade_one(annotation: dict, judge: LLMJudge) -> CallEvalResult:
     bot_must_not_all_pass = all(bot_must_not_results.values()) if bot_must_not_results else True
     full_pass = (
         outcome_match
+        and transfer_correct
         and compliance_pass
         and bot_must_all_pass
         and bot_must_not_all_pass
@@ -435,6 +502,7 @@ def grade_one(annotation: dict, judge: LLMJudge) -> CallEvalResult:
         expected_outcome=expected,
         actual_outcome=actual,
         outcome_match=outcome_match,
+        transfer_correct=transfer_correct,
         compliance_pass=compliance_pass,
         compliance_violations=compliance_violations,
         bot_must_results=bot_must_results,
@@ -464,7 +532,7 @@ def write_csv(results: list[CallEvalResult]) -> None:
     # Column layout mirrors results_v2.csv where possible — direct comparability
     cols = [
         "call_id", "persona_id", "turns", "weight",
-        "expected_outcome", "actual_outcome", "outcome_match",
+        "expected_outcome", "actual_outcome", "outcome_match", "transfer_correct",
         "compliance_pass", "compliance_violations",
         "slot_date_captured", "slot_mode_captured",
         "tone_pass", "tone_reason",
@@ -482,7 +550,8 @@ def write_csv(results: list[CallEvalResult]) -> None:
         for r in results:
             w.writerow({
                 "call_id": r.call_id, "persona_id": r.persona_id, "turns": r.turns, "weight": r.weight,
-                "expected_outcome": r.expected_outcome, "actual_outcome": r.actual_outcome, "outcome_match": r.outcome_match,
+                "expected_outcome": r.expected_outcome, "actual_outcome": r.actual_outcome,
+                "outcome_match": r.outcome_match, "transfer_correct": r.transfer_correct,
                 "compliance_pass": r.compliance_pass, "compliance_violations": ";".join(r.compliance_violations),
                 "slot_date_captured": r.slot_date_captured, "slot_mode_captured": r.slot_mode_captured,
                 "tone_pass": r.tone_pass, "tone_reason": r.tone_reason,
@@ -542,7 +611,8 @@ def print_summary(results: list[CallEvalResult]) -> None:
         mean_out = sum(r.llm_output_tokens for r in results) / n
         print(f"Aggregate (n={n}):")
         print(f"  compliance_pass             : {pct(lambda r: r.compliance_pass)}")
-        print(f"  outcome_match               : {pct(lambda r: r.outcome_match)}  (only meaningful when annotation has expected_outcome)")
+        print(f"  outcome_match               : {pct(lambda r: r.outcome_match)}  (ground truth inferred for auto-annotated calls)")
+        print(f"  transfer_correct            : {pct(lambda r: r.transfer_correct)}  (ground truth inferred for auto-annotated calls)")
         print(f"  slot_date_captured          : {pct(lambda r: r.slot_date_captured)}")
         print(f"  slot_mode_captured          : {pct(lambda r: r.slot_mode_captured)}")
         print(f"  tone_pass                   : {pct(lambda r: r.tone_pass)}")
